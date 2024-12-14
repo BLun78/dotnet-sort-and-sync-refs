@@ -30,9 +30,9 @@ namespace DotNetSortRefs
             var removeList = new List<XElement>();
             foreach (var propsFile in propsFiles)
             {
-                
+
                 removeList.Clear();
-                
+
                 var docPropsFile = XDocument.Parse(await System.IO.File.ReadAllTextAsync(propsFile).ConfigureAwait(false));
 
                 var itemGroups = docPropsFile.XPathSelectElements($"//ItemGroup[{PropsElementTypes}]");
@@ -67,24 +67,27 @@ namespace DotNetSortRefs
         private static List<XElement> GetReferenceElements(List<XElement> elementsOfProjectFiles)
         {
             var attributesOfProjectFiles = new List<XElement>();
-            XElement node = null;
 
-            do
+            foreach (var elementsOfProjectFile in elementsOfProjectFiles)
             {
-                if (node == null)
+                XElement node = null;
+                do
                 {
-                    node = elementsOfProjectFiles[0].FirstNode as XElement;
-                }
-                else
-                {
-                    node = node.NextNode as XElement;
-                }
-                var firstAttribute = node.FirstAttribute;
-                attributesOfProjectFiles.Add(node);
+                    if (node == null)
+                    {
+                        node = elementsOfProjectFile.FirstNode as XElement;
+                    }
+                    else
+                    {
+                        node = node.NextNode as XElement;
+                    }
+                    var firstAttribute = node.FirstAttribute;
+                    attributesOfProjectFiles.Add(node);
 
 
-            } while (node.NextNode != null);
+                } while (node.NextNode != null);
 
+            }
             return attributesOfProjectFiles;
         }
     }
