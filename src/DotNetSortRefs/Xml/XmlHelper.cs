@@ -1,6 +1,4 @@
 ﻿using DotNetSortRefs.Common;
-using McMaster.Extensions.CommandLineUtils;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;

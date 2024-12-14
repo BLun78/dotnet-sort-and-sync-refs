@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.136
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetSortRefs", "DotNetSortRefs\DotNetSortRefs.csproj", "{18F8C228-6832-4F8F-B629-79A368B23339}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetSortRefs", "src\DotNetSortRefs\DotNetSortRefs.csproj", "{18F8C228-6832-4F8F-B629-79A368B23339}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

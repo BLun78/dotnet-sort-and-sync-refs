@@ -15,13 +15,13 @@ nuget:
 
 before_build:
 - dotnet --info
-- dotnet restore .\src\DotNetSortRefs.sln
+- dotnet restore .\DotNetSortRefs.sln
 
 build_script:
-- dotnet build .\src\DotNetSortRefs.sln --configuration Release
+- dotnet build .\DotNetSortRefs.sln --configuration Release
  
 # after_test:
-#   - dotnet pack .\src\DotNetSortRefs --configuration Release
+#   - dotnet pack .\DotNetSortRefs --configuration Release
 
 # artifacts:
 #   - path: '**\dotnet-sort-refs.*.*nupkg' # find all NuGet packages recursively
