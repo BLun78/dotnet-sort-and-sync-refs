@@ -1,16 +1,12 @@
-﻿using System;
+﻿using McMaster.Extensions.CommandLineUtils;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Xml;
-using System.Xml.Linq;
-using System.Xml.XPath;
-using System.Xml.Xsl;
-using McMaster.Extensions.CommandLineUtils;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace DotNetSortRefs
 {
@@ -20,22 +16,16 @@ namespace DotNetSortRefs
     [VersionOptionFromMember(MemberName = nameof(GetVersion))]
     internal class Program : CommandBase
     {
-        private readonly IFileSystem _fileSystem;
-        private readonly IReporter _reporter;
-
-        public Program(IFileSystem fileSystem, IReporter reporter)
+        static async Task<int> Main(string[] args)
         {
-            _fileSystem = fileSystem;
-            _reporter = reporter;
-        }
-
-        static int Main(string[] args)
-        {
-            using var services = new ServiceCollection()
+            var provider = new ServiceCollection()
                 .AddSingleton(PhysicalConsole.Singleton)
                 .AddSingleton<IReporter>(provider => new ConsoleReporter(provider.GetService<IConsole>()!))
                 .AddSingleton<IFileSystem, FileSystem>()
                 .BuildServiceProvider();
+
+            await using var providerDisposeTask = provider.ConfigureAwait(false);
+
             var app = new CommandLineApplication<Program>
             {
                 UnrecognizedArgumentHandling = UnrecognizedArgumentHandling.Throw
@@ -43,11 +33,11 @@ namespace DotNetSortRefs
 
             app.Conventions
                 .UseDefaultConventions()
-                .UseConstructorInjection(services);
-                
+                .UseConstructorInjection(provider);
+
             try
             {
-                return app.Execute(args);
+                return await app.ExecuteAsync(args).ConfigureAwait(false);
             }
             catch (UnrecognizedCommandParsingException)
             {
@@ -58,16 +48,25 @@ namespace DotNetSortRefs
 
         [Argument(0, Description =
             "The path to a .csproj, .fsproj or directory. If a directory is specified, all .csproj and .fsproj files within folder tree will be processed. If none specified, it will use the current directory.")]
-        private string Path { get; set; }
+        public string Path { get; set; }
 
         [Option(CommandOptionType.NoValue, Description = "Specifies whether to inspect and return a non-zero exit code if one or more projects have non-sorted package references.",
             ShortName = "i", LongName = "inspect")]
-        private bool IsInspect { get; set; } = false;
+        public bool IsInspect { get; set; } = false;
 
         private static string GetVersion() => typeof(Program)
             .Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
             ?.InformationalVersion;
+
+        private readonly IFileSystem _fileSystem;
+        private readonly IReporter _reporter;
+
+        public Program(IFileSystem fileSystem, IReporter reporter)
+        {
+            _fileSystem = fileSystem;
+            _reporter = reporter;
+        }
 
         private async Task<int> OnExecute(CommandLineApplication app, IConsole console)
         {
@@ -83,7 +82,7 @@ namespace DotNetSortRefs
                 }
 
                 var projFiles = new List<string>();
-                var extensions = new[] { ".csproj", ".fsproj", ".props" };
+                var extensions = new[] { ".csproj", ".fsproj", ".vbproj", ".props" };
 
                 if (_fileSystem.File.Exists(Path))
                 {
@@ -102,7 +101,7 @@ namespace DotNetSortRefs
                     return 1;
                 }
 
-                var projFilesWithNonSortedReferences = await Inspect(projFiles);
+                var projFilesWithNonSortedReferences = await XmlHelper.Inspect(projFiles).ConfigureAwait(false);
 
                 if (IsInspect)
                 {
@@ -113,7 +112,7 @@ namespace DotNetSortRefs
                 else
                 {
                     Console.WriteLine("Running sort package references...");
-                    return await SortReferences(projFilesWithNonSortedReferences);
+                    return await XmlHelper.SortReferences(projFilesWithNonSortedReferences, _reporter).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -123,42 +122,8 @@ namespace DotNetSortRefs
             }
         }
 
-        private static async Task<List<string>> Inspect(IEnumerable<string> projFiles)
-        {
-            var projFilesWithNonSortedReferences = new List<string>();
-
-            foreach (var proj in projFiles)
-            {
-                using (var sw = new StringWriter())
-                {
-                    var doc = XDocument.Parse(System.IO.File.ReadAllText(proj));
-
-                    const string elementTypes = "PackageReference|Reference|PackageVersion";
-                    var itemGroups = doc.XPathSelectElements($"//ItemGroup[{elementTypes}]");
-
-                    foreach (var itemGroup in itemGroups)
-                    {
-                        var references = itemGroup.XPathSelectElements(elementTypes)
-                            .Select(x => x.Attribute("Include")?.Value.ToLowerInvariant()).ToList();
-
-                        if (references.Count <= 1) continue;
-
-                        var sortedReferences = references.OrderBy(x => x).ToList();
-
-                        var result = references.SequenceEqual(sortedReferences);
-
-                        if (!result && !projFilesWithNonSortedReferences.Contains(proj))
-                        {
-                            projFilesWithNonSortedReferences.Add(proj);
-                        }
-                    }
-                }
-            }
-
-            return await Task.FromResult(projFilesWithNonSortedReferences);
-        }
-
-        private void PrintInspectionResults(IEnumerable<string> projFiles,
+        private void PrintInspectionResults(
+            IEnumerable<string> projFiles,
             ICollection<string> projFilesWithNonSortedReferences)
         {
             foreach (var proj in projFiles)
@@ -172,33 +137,6 @@ namespace DotNetSortRefs
                     _reporter.Output($"» {proj} ✓");
                 }
             }
-        }
-
-        private async Task<int> SortReferences(IEnumerable<string> projFiles)
-        {
-            var xslt = GetXslTransform();
-
-            foreach (var proj in projFiles)
-            {
-                _reporter.Output($"» {proj}");
-
-                await using var sw = new StringWriter();
-                var doc = XDocument.Parse(await System.IO.File.ReadAllTextAsync(proj));
-                xslt.Transform(doc.CreateNavigator(), null, sw);
-                await File.WriteAllTextAsync(proj, sw.ToString());
-            }
-
-            return await Task.FromResult(0);
-        }
-
-        private static XslCompiledTransform GetXslTransform()
-        {   
-            var assembly = Assembly.GetExecutingAssembly();
-            using var stream = assembly.GetManifestResourceStream("DotNetSortRefs.Sort.xsl");
-            using var reader = XmlReader.Create(stream!);
-            var xslt = new XslCompiledTransform();
-            xslt.Load(reader);
-            return xslt;
         }
     }
 }
