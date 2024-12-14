@@ -71,6 +71,7 @@ namespace DotNetSortRefs
             foreach (var elementsOfProjectFile in elementsOfProjectFiles)
             {
                 XElement node = null;
+
                 do
                 {
                     if (node == null)
@@ -81,9 +82,7 @@ namespace DotNetSortRefs
                     {
                         node = node.NextNode as XElement;
                     }
-                    var firstAttribute = node.FirstAttribute;
                     attributesOfProjectFiles.Add(node);
-
 
                 } while (node.NextNode != null);
 
