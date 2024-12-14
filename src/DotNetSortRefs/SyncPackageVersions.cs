@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -7,20 +8,19 @@ using System.Xml.XPath;
 
 namespace DotNetSortRefs
 {
-    internal class SyncRefs
+    internal static class SyncPackageVersions
     {
         public const string PackageReference = @"PackageReference";
         public const string Reference = @"Reference";
-        public const string Include = @"Include";
         public static string ProjectElementTypes = $"{PackageReference}|{Reference}";
         public const string PropsElementTypes = @"PackageVersion";
 
-        public static async Task<int> CleanUp(IEnumerable<string> projFiles, IEnumerable<string> propsFiles)
+        public static async Task<int> CleanUp(this IFileSystem fileSystem, IEnumerable<string> projFiles, IEnumerable<string> propsFiles)
         {
             var elementsOfProjectFiles = new List<XElement>();
             foreach (var projFile in projFiles)
             {
-                var docProjFile = XDocument.Parse(await System.IO.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
+                var docProjFile = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
                 var itemGroups = docProjFile.XPathSelectElements($"//ItemGroup[{ProjectElementTypes}]");
                 elementsOfProjectFiles.AddRange(itemGroups);
             }
@@ -33,7 +33,7 @@ namespace DotNetSortRefs
 
                 removeList.Clear();
 
-                var docPropsFile = XDocument.Parse(await System.IO.File.ReadAllTextAsync(propsFile).ConfigureAwait(false));
+                var docPropsFile = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(propsFile).ConfigureAwait(false));
 
                 var itemGroups = docPropsFile.XPathSelectElements($"//ItemGroup[{PropsElementTypes}]");
                 var attributesOfPropsFiles = GetReferenceElements(itemGroups.ToList());

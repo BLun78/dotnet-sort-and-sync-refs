@@ -20,7 +20,6 @@ namespace DotNetSortRefs
         {
             var provider = new ServiceCollection()
                 .AddSingleton(PhysicalConsole.Singleton)
-                .AddSingleton<SyncRefs>()
                 .AddSingleton<IReporter>(provider => new ConsoleReporter(provider.GetService<IConsole>()!))
                 .AddSingleton<IFileSystem, FileSystem>()
                 .BuildServiceProvider();
@@ -105,7 +104,7 @@ namespace DotNetSortRefs
                     return 1;
                 }
 
-                var projFilesWithNonSortedReferences = await XmlHelper
+                var projFilesWithNonSortedReferences = await _fileSystem
                     .Inspect(allFiles)
                     .ConfigureAwait(false);
 
@@ -120,12 +119,12 @@ namespace DotNetSortRefs
                     Console.WriteLine("Running cleanup...");
                     var fileProjects = LoadFilesFromExtension(extensionsProjects);
                     var fileProps = LoadFilesFromExtension(extensionsProps);
-                    return await SyncRefs.CleanUp(fileProjects, fileProps).ConfigureAwait(false);
+                    return await _fileSystem.CleanUp(fileProjects, fileProps).ConfigureAwait(false);
                 }
                 else
                 {
                     Console.WriteLine("Running sort package references...");
-                    return await XmlHelper
+                    return await _fileSystem
                         .SortReferences(projFilesWithNonSortedReferences, _reporter)
                         .ConfigureAwait(false);
                 }

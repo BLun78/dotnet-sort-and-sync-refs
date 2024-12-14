@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -16,14 +17,14 @@ namespace DotNetSortRefs
     {
         public const string ElementTypes = "PackageReference|Reference|PackageVersion";
 
-        public static async Task<List<string>> Inspect(IEnumerable<string> projFiles)
+        public static async Task<List<string>> Inspect(this IFileSystem fileSystem, IEnumerable<string> projFiles)
         {
             var projFilesWithNonSortedReferences = new List<string>();
 
 
             foreach (var projFile in projFiles)
             {
-                var doc = XDocument.Parse(await System.IO.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
+                var doc = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
 
                 var itemGroups = doc.XPathSelectElements($"//ItemGroup[{ElementTypes}]");
 
@@ -58,7 +59,7 @@ namespace DotNetSortRefs
             return xslt;
         }
 
-        public static async Task<int> SortReferences(IEnumerable<string> projFiles, IReporter report)
+        public static async Task<int> SortReferences(this IFileSystem fileSystem, IEnumerable<string> projFiles, IReporter report)
         {
             var xslt = XmlHelper.GetXslTransform();
 
@@ -67,9 +68,9 @@ namespace DotNetSortRefs
                 report.Output($"» {projFile}");
 
                 await using var sw = new StringWriter();
-                var doc = XDocument.Parse(await System.IO.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
+                var doc = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
                 xslt.Transform(doc.CreateNavigator(), null, sw);
-                await File.WriteAllTextAsync(projFile, sw.ToString()).ConfigureAwait(false);
+                await fileSystem.File.WriteAllTextAsync(projFile, sw.ToString()).ConfigureAwait(false);
             }
 
             return 0;
