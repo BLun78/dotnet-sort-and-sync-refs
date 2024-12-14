@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DotNetSortRefs": {
+      "commandName": "Project",
+      "commandLineArgs": "-c"
+    }
+  }
+}

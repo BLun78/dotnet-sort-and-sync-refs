@@ -20,6 +20,7 @@ namespace DotNetSortRefs
         {
             var provider = new ServiceCollection()
                 .AddSingleton(PhysicalConsole.Singleton)
+                .AddSingleton<SyncRefs>()
                 .AddSingleton<IReporter>(provider => new ConsoleReporter(provider.GetService<IConsole>()!))
                 .AddSingleton<IFileSystem, FileSystem>()
                 .BuildServiceProvider();
@@ -37,7 +38,8 @@ namespace DotNetSortRefs
 
             try
             {
-                return await app.ExecuteAsync(args).ConfigureAwait(false);
+                return await app.ExecuteAsync(args)
+                    .ConfigureAwait(false);
             }
             catch (UnrecognizedCommandParsingException)
             {
@@ -53,6 +55,11 @@ namespace DotNetSortRefs
         [Option(CommandOptionType.NoValue, Description = "Specifies whether to inspect and return a non-zero exit code if one or more projects have non-sorted package references.",
             ShortName = "i", LongName = "inspect")]
         public bool IsInspect { get; set; } = false;
+
+        [Option(CommandOptionType.NoValue, Description = "Specifies whether to cleanup the PackageVersion to protect the application for old version usage.",
+            ShortName = "c", LongName = "cleanup")]
+        public bool IsCleanup { get; set; } = false;
+
 
         private static string GetVersion() => typeof(Program)
             .Assembly
@@ -73,46 +80,54 @@ namespace DotNetSortRefs
             try
             {
                 if (string.IsNullOrEmpty(Path))
-                    Path = _fileSystem.Directory.GetCurrentDirectory();
+                    Path = _fileSystem
+                        .Directory
+                        .GetCurrentDirectory();
 
-                if (!(_fileSystem.File.Exists(Path) || _fileSystem.Directory.Exists(Path)))
+                if (!(_fileSystem.File.Exists(Path) ||
+                      _fileSystem.Directory.Exists(Path)))
                 {
                     _reporter.Error("Directory or file does not exist.");
                     return 1;
                 }
 
-                var projFiles = new List<string>();
-                var extensions = new[] { ".csproj", ".fsproj", ".vbproj", ".props" };
+                var extensionsProjects = new[] { ".csproj", ".fsproj", ".vbproj" };
+                var extensionsProps = new[] { ".props" };
+                var allExtensions = new List<string>();
+                allExtensions.AddRange(extensionsProjects);
+                allExtensions.AddRange(extensionsProps);
 
-                if (_fileSystem.File.Exists(Path))
-                {
-                    projFiles.Add(Path);
-                }
-                else
-                {
-                    projFiles = extensions
-                        .SelectMany(ext => _fileSystem.Directory.GetFiles(Path, $"*{ext}", SearchOption.AllDirectories))
-                        .ToList();
-                }
+                var allFiles = LoadFilesFromExtension(allExtensions);
 
-                if (projFiles.Count == 0)
+                if (allFiles.Count == 0)
                 {
-                    _reporter.Error($"no '{string.Join(", ", extensions)}'' files found.");
+                    _reporter.Error($"no '{string.Join(", ", allExtensions)}'' files found.");
                     return 1;
                 }
 
-                var projFilesWithNonSortedReferences = await XmlHelper.Inspect(projFiles).ConfigureAwait(false);
+                var projFilesWithNonSortedReferences = await XmlHelper
+                    .Inspect(allFiles)
+                    .ConfigureAwait(false);
 
                 if (IsInspect)
                 {
                     Console.WriteLine("Running inspection...");
-                    PrintInspectionResults(projFiles, projFilesWithNonSortedReferences);
+                    PrintInspectionResults(allFiles, projFilesWithNonSortedReferences);
                     return projFilesWithNonSortedReferences.Count > 0 ? 1 : 0;
+                }
+                else if (IsCleanup)
+                {
+                    Console.WriteLine("Running cleanup...");
+                    var fileProjects = LoadFilesFromExtension(extensionsProjects);
+                    var fileProps = LoadFilesFromExtension(extensionsProps);
+                    return await SyncRefs.CleanUp(fileProjects, fileProps).ConfigureAwait(false);
                 }
                 else
                 {
                     Console.WriteLine("Running sort package references...");
-                    return await XmlHelper.SortReferences(projFilesWithNonSortedReferences, _reporter).ConfigureAwait(false);
+                    return await XmlHelper
+                        .SortReferences(projFilesWithNonSortedReferences, _reporter)
+                        .ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -120,6 +135,25 @@ namespace DotNetSortRefs
                 _reporter.Error(e.StackTrace!);
                 return 1;
             }
+        }
+
+        private List<string> LoadFilesFromExtension(IEnumerable<string> extensions)
+        {
+            var projFiles = new List<string>();
+            if (_fileSystem.File.Exists(Path))
+            {
+                projFiles.Add(Path);
+            }
+            else
+            {
+                projFiles = extensions
+                    .SelectMany(ext => _fileSystem
+                        .Directory
+                        .GetFiles(Path, $"*{ext}", SearchOption.AllDirectories))
+                    .ToList();
+            }
+
+            return projFiles;
         }
 
         private void PrintInspectionResults(

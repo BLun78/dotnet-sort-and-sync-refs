@@ -1,21 +1,38 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Description>A .NET Core global tool to alphabetically sort package references in csproj or fsproj</Description>
-    <VersionPrefix>2.0.0</VersionPrefix>
+    <VersionPrefix>3.0.0</VersionPrefix>
     <Authors>Babu Annamalai</Authors>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp3.1;net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
-    <AssemblyName>dotnet-sort-refs</AssemblyName>
-    <PackageId>dotnet-sort-refs</PackageId>
+    <TargetFrameworks>netcoreapp3.1;net5.0;net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
+    <AssemblyName>dotnet-sort-and-sync-refs</AssemblyName>
+    <PackageId>dotnet-sort-and-sync-refs</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
     <PackageProjectUrl>https://github.com/mysticmind/dotnet-sort-refs</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <IsPackable>true</IsPackable>
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>dotnet-sort-refs</ToolCommandName>
+    <ToolCommandName>dotnet-sort-and-sync-refs</ToolCommandName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0|AnyCPU'">
+    <WarningLevel>8</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net9.0|AnyCPU'">
+    <WarningLevel>8</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="TestContent\Directory.Packages.props" />
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Include="Sort.xsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="TestContent\Directory.Packages.props">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestContent\Test.csproj">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="4.1.0" />
