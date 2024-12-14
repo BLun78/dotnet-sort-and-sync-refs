@@ -26,7 +26,7 @@ namespace DotNetSortRefs
             }
             var referenceElementsOfProjectFiles = GetReferenceElements(elementsOfProjectFiles);
 
-            var lookup = referenceElementsOfProjectFiles.ToLookup(x => x.FirstAttribute.Value, element => element);
+            var lookup = referenceElementsOfProjectFiles.ToLookup(x => x.FirstAttribute?.Value, element => element);
             var removeList = new List<XElement>();
             foreach (var propsFile in propsFiles)
             {
