@@ -3,7 +3,7 @@
     <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="LightInject" />
+    <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
 </Project>

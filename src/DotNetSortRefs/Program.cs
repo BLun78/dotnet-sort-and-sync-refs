@@ -1,4 +1,6 @@
-﻿using McMaster.Extensions.CommandLineUtils;
+﻿using DotNetSortRefs.Common;
+using DotNetSortRefs.Xml;
+using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -20,7 +22,7 @@ namespace DotNetSortRefs
         {
             var provider = new ServiceCollection()
                 .AddSingleton(PhysicalConsole.Singleton)
-                .AddSingleton<IReporter>(provider => new ConsoleReporter(provider.GetService<IConsole>()!))
+                .AddSingleton<Reporter>(provider => new Reporter(provider.GetService<IConsole>()!))
                 .AddSingleton<IFileSystem, FileSystem>()
                 .BuildServiceProvider();
 
@@ -55,9 +57,13 @@ namespace DotNetSortRefs
             ShortName = "i", LongName = "inspect")]
         public bool IsInspect { get; set; } = false;
 
-        [Option(CommandOptionType.NoValue, Description = "Specifies whether to cleanup the PackageVersion to protect the application for old version usage.",
-            ShortName = "c", LongName = "cleanup")]
-        public bool IsCleanup { get; set; } = false;
+        [Option(CommandOptionType.NoValue, Description = "Specifies whether to remove not needed PackageVersion to protect the application for old version usage.",
+            ShortName = "r", LongName = "remove")]
+        public bool DoRemovePackageVersions { get; set; } = false;
+
+        [Option(CommandOptionType.NoValue, Description = "Specifies whether to enable Central Package Management and create a file called \"Directory.Packages.props\".",
+            ShortName = "c", LongName = "create")]
+        public bool DoCreatePackageVersions { get; set; } = false;
 
 
         private static string GetVersion() => typeof(Program)
@@ -66,12 +72,13 @@ namespace DotNetSortRefs
             ?.InformationalVersion;
 
         private readonly IFileSystem _fileSystem;
-        private readonly IReporter _reporter;
+        private readonly Reporter _reporter;
 
-        public Program(IFileSystem fileSystem, IReporter reporter)
+        public Program(IFileSystem fileSystem, Reporter reporter)
         {
             _fileSystem = fileSystem;
             _reporter = reporter;
+
         }
 
         private async Task<int> OnExecute(CommandLineApplication app, IConsole console)
@@ -90,18 +97,24 @@ namespace DotNetSortRefs
                     return 1;
                 }
 
+                var result = -10;
+
                 var extensionsProjects = new[] { ".csproj", ".fsproj", ".vbproj" };
                 var extensionsProps = new[] { ".props" };
                 var allExtensions = new List<string>();
                 allExtensions.AddRange(extensionsProjects);
                 allExtensions.AddRange(extensionsProps);
 
-                var allFiles = LoadFilesFromExtension(allExtensions);
+                var fileProjects = LoadFilesFromExtension(extensionsProjects);
+                var fileProps = LoadFilesFromExtension(extensionsProps);
+                var allFiles = new List<string>();
+                allFiles.AddRange(fileProjects);
+                allFiles.AddRange(fileProps);
 
                 if (allFiles.Count == 0)
                 {
                     _reporter.Error($"no '{string.Join(", ", allExtensions)}'' files found.");
-                    return 1;
+                    return 2;
                 }
 
                 var projFilesWithNonSortedReferences = await _fileSystem
@@ -110,29 +123,61 @@ namespace DotNetSortRefs
 
                 if (IsInspect)
                 {
-                    Console.WriteLine("Running inspection...");
+                    _reporter.Output("Running inspection ...");
                     PrintInspectionResults(allFiles, projFilesWithNonSortedReferences);
-                    return projFilesWithNonSortedReferences.Count > 0 ? 1 : 0;
+                    result = projFilesWithNonSortedReferences.Count > 0
+                        ? 0
+                        : 1;
                 }
-                else if (IsCleanup)
+                else if (DoRemovePackageVersions)
                 {
-                    Console.WriteLine("Running cleanup...");
-                    var fileProjects = LoadFilesFromExtension(extensionsProjects);
-                    var fileProps = LoadFilesFromExtension(extensionsProps);
-                    return await _fileSystem.CleanUp(fileProjects, fileProps).ConfigureAwait(false);
+                    _reporter.Output("Running remove not needed PackageVersion ...");
+                    result = await _fileSystem
+                        .RemovePackageVersions(_reporter, fileProjects, fileProps)
+                        .ConfigureAwait(false);
+                    if (result == 0)
+                    {
+                        result = await _fileSystem
+                            .SortReferences(_reporter, projFilesWithNonSortedReferences)
+                            .ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        result = -1;
+                    }
+                }
+                else if (DoCreatePackageVersions)
+                {
+                    _reporter.Output("Running create a Central Package Management file ( \"Directory.Packages.props\") ...");
+                    result = await _fileSystem
+                        .CreatePackageVersions(fileProjects, Path)
+                        .ConfigureAwait(false);
+                    if (result == 0)
+                    {
+                        result = await _fileSystem
+                            .SortReferences(_reporter, projFilesWithNonSortedReferences)
+                            .ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        result = -2;
+                    }
                 }
                 else
                 {
-                    Console.WriteLine("Running sort package references...");
-                    return await _fileSystem
-                        .SortReferences(projFilesWithNonSortedReferences, _reporter)
+                    _reporter.Output("Running sort package references ...");
+                    result = await _fileSystem
+                        .SortReferences(_reporter, projFilesWithNonSortedReferences)
                         .ConfigureAwait(false);
                 }
+
+                _reporter.Output("Done.");
+                return result;
             }
             catch (Exception e)
             {
                 _reporter.Error(e.StackTrace!);
-                return 1;
+                return -3;
             }
         }
 
@@ -156,18 +201,20 @@ namespace DotNetSortRefs
         }
 
         private void PrintInspectionResults(
-            IEnumerable<string> projFiles,
+            ICollection<string> projFiles,
             ICollection<string> projFilesWithNonSortedReferences)
         {
+            var max = projFiles.Max(x => x.Length);
             foreach (var proj in projFiles)
             {
+                var paddedProjectFile = proj.PadRight(max);
                 if (projFilesWithNonSortedReferences.Contains(proj))
                 {
-                    _reporter.Error($"» {proj} X");
+                    _reporter.Error($"» {paddedProjectFile} - X");
                 }
                 else
                 {
-                    _reporter.Output($"» {proj} ✓");
+                    _reporter.Ok($"» {paddedProjectFile} - Ok");
                 }
             }
         }

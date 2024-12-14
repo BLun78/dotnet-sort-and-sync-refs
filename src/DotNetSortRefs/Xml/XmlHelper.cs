@@ -1,4 +1,5 @@
-﻿using McMaster.Extensions.CommandLineUtils;
+﻿using DotNetSortRefs.Common;
+using McMaster.Extensions.CommandLineUtils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,12 +12,10 @@ using System.Xml.Linq;
 using System.Xml.XPath;
 using System.Xml.Xsl;
 
-namespace DotNetSortRefs
+namespace DotNetSortRefs.Xml
 {
     internal static class XmlHelper
     {
-        public const string ElementTypes = "PackageReference|Reference|PackageVersion";
-
         public static async Task<List<string>> Inspect(this IFileSystem fileSystem, IEnumerable<string> projFiles)
         {
             var projFilesWithNonSortedReferences = new List<string>();
@@ -26,11 +25,11 @@ namespace DotNetSortRefs
             {
                 var doc = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
 
-                var itemGroups = doc.XPathSelectElements($"//ItemGroup[{ElementTypes}]");
+                var itemGroups = doc.XPathSelectElements($"//ItemGroup[{ConstConfig.AllElementTypes}]");
 
                 foreach (var itemGroup in itemGroups)
                 {
-                    var references = itemGroup.XPathSelectElements(ElementTypes)
+                    var references = itemGroup.XPathSelectElements(ConstConfig.AllElementTypes)
                         .Select(x => x.Attribute("Include")?.Value.ToLowerInvariant()).ToList();
 
                     if (references.Count <= 1) continue;
@@ -59,21 +58,49 @@ namespace DotNetSortRefs
             return xslt;
         }
 
-        public static async Task<int> SortReferences(this IFileSystem fileSystem, IEnumerable<string> projFiles, IReporter report)
+        public static async Task<int> SortReferences(this IFileSystem fileSystem, Reporter report, IEnumerable<string> projFiles)
         {
-            var xslt = XmlHelper.GetXslTransform();
+            var result = 5;
+            var xslt = GetXslTransform();
 
             foreach (var projFile in projFiles)
             {
-                report.Output($"» {projFile}");
+                report.Do($"» {projFile}");
 
                 await using var sw = new StringWriter();
                 var doc = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
                 xslt.Transform(doc.CreateNavigator(), null, sw);
                 await fileSystem.File.WriteAllTextAsync(projFile, sw.ToString()).ConfigureAwait(false);
+                result = 0;
             }
 
-            return 0;
+            return result;
+        }
+
+        public static List<XElement> GetReferenceElements(this List<XElement> elementsOfProjectFiles)
+        {
+            var attributesOfProjectFiles = new List<XElement>();
+
+            foreach (var elementsOfProjectFile in elementsOfProjectFiles)
+            {
+                XElement node = null;
+
+                do
+                {
+                    if (node == null)
+                    {
+                        node = elementsOfProjectFile.FirstNode as XElement;
+                    }
+                    else
+                    {
+                        node = node.NextNode as XElement;
+                    }
+                    attributesOfProjectFiles.Add(node);
+
+                } while (node?.NextNode != null);
+
+            }
+            return attributesOfProjectFiles;
         }
     }
 }
