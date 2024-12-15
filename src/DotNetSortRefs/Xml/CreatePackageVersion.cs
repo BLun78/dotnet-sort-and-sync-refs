@@ -12,8 +12,7 @@ namespace DotNetSortRefs.Xml
 {
     internal static class CreatePackageVersion
     {
-        private const string WithOutCondition = "WithOutCondition";
-        private const string initalFile =
+        private const string InitialFile =
             """
             <Project>
               <PropertyGroup>
@@ -34,12 +33,12 @@ namespace DotNetSortRefs.Xml
             var directoryPackagesPropsFilePath = fileSystem.Path.Combine(path, @"Directory.Packages.props");
             var directoryPackagesPropsFileBackupPath = $"{directoryPackagesPropsFilePath}.backup";
             var directoryPackagesPropsFileMode = FileMode.CreateNew;
-            var doc = XDocument.Parse(initalFile);
+            var doc = XDocument.Parse(InitialFile);
             var itemGroup = doc.XPathSelectElements($"//ItemGroup").First();
 
             var dict = new Dictionary<string, XElement>
             {
-                { WithOutCondition, itemGroup }
+                { ConstConfig.WithOutCondition, itemGroup }
             };
 
             if (fileSystem.File.Exists(directoryPackagesPropsFilePath))
@@ -72,7 +71,7 @@ namespace DotNetSortRefs.Xml
                     var referenceElementsOfProjectFiles = elementsOfProjectFiles.GetReferenceElements();
                     foreach (var element in referenceElementsOfProjectFiles)
                     {
-                        var condition = element.Parent.GetCondition() ?? WithOutCondition;
+                        var condition = element.Parent.GetCondition() ?? ConstConfig.WithOutCondition;
 
                         if (dict.TryGetValue(condition, out var value))
                         {
@@ -84,6 +83,7 @@ namespace DotNetSortRefs.Xml
                             element.RemoveVersion();
                         }
                     }
+
                     await XmlHelper.SaveXDocument(fileSystem, projFile, docProjFile, FileMode.Truncate);
                     reporter.Ok($"» Updated {projFile}");
                     result = 0;
@@ -136,7 +136,7 @@ namespace DotNetSortRefs.Xml
             return null;
         }
 
-        private static string GetCondition(this XElement element)
+        public static string GetCondition(this XElement element)
         {
             var condition = element.FirstAttribute;
             if (condition != null &&

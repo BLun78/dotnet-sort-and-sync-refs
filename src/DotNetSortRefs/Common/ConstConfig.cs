@@ -7,5 +7,6 @@
         public const string PropsElementTypes = @"PackageVersion";
         public const string Condition = @"Condition";
         public const string Version = @"Version";
+        public const string WithOutCondition = "WithOutCondition";
     }
 }

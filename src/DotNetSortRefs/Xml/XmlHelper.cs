@@ -1,5 +1,5 @@
-﻿using System;
-using DotNetSortRefs.Common;
+﻿using DotNetSortRefs.Common;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
@@ -11,7 +11,6 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using System.Xml.Xsl;
-using McMaster.Extensions.CommandLineUtils;
 
 namespace DotNetSortRefs.Xml
 {
@@ -29,6 +28,7 @@ namespace DotNetSortRefs.Xml
                     var doc = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
 
                     var itemGroups = doc.XPathSelectElements($"//ItemGroup[{ConstConfig.AllElementTypes}]");
+                    var dict = new Dictionary<string, List<XElement>>();
 
                     foreach (var itemGroup in itemGroups)
                     {
@@ -46,7 +46,7 @@ namespace DotNetSortRefs.Xml
                             reporter.NotOk($"» {projFile}");
                             projFilesWithNonSortedReferences.Add(projFile);
                         }
-                        else
+                        else if (!projFilesWithNonSortedReferences.Contains(projFile))
                         {
                             reporter.Ok($"» {projFile}");
                         }
@@ -86,8 +86,8 @@ namespace DotNetSortRefs.Xml
                     await using var sw = new StringWriter();
                     var doc = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
                     xslt.Transform(doc.CreateNavigator(), null, sw);
-                    await fileSystem.File.WriteAllTextAsync(projFile, sw.ToString()).ConfigureAwait(false); 
-                    
+                    await fileSystem.File.WriteAllTextAsync(projFile, sw.ToString()).ConfigureAwait(false);
+
                     reporter.Ok($"» {projFile}");
                     result = 0;
                 }
@@ -132,8 +132,7 @@ namespace DotNetSortRefs.Xml
             await using Stream sw = new FileStream(path, fileMode);
             await sw.FlushAsync().ConfigureAwait(false);
             await doc.SaveAsync(sw, SaveOptions.None, CancellationToken.None);
-            
-        }
 
+        }
     }
 }
