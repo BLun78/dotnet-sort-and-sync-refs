@@ -59,9 +59,7 @@ namespace DotNetSortRefs.Xml
                 }
 
                 // write new file
-                await using Stream sw = new FileStream(propsFile, FileMode.Truncate);
-                await docPropsFile.SaveAsync(sw, SaveOptions.None, CancellationToken.None);
-                await sw.FlushAsync().ConfigureAwait(false);
+                await XmlHelper.SaveXDocument(fileSystem, propsFile, docPropsFile, FileMode.CreateNew);
 
                 result = 0;
             }

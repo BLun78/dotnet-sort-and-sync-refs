@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -29,6 +28,8 @@ namespace DotNetSortRefs.Xml
         {
             var result = 3;
 
+            var directoryPackagesPropsFilePath = fileSystem.Path.Combine(path, @"Directory.Packages.props");
+            var directoryPackagesPropsFileMode = FileMode.CreateNew;
             var doc = XDocument.Parse(initalFile);
             var itemGroup = doc.XPathSelectElements($"//ItemGroup").First();
 
@@ -37,9 +38,17 @@ namespace DotNetSortRefs.Xml
                 { WithOutCondition, itemGroup }
             };
 
+            if (fileSystem.File.Exists(directoryPackagesPropsFilePath))
+            {
+                fileSystem.File.Copy(directoryPackagesPropsFilePath, $"{directoryPackagesPropsFilePath}.backup", true);
+                directoryPackagesPropsFileMode = FileMode.Truncate;
+            }
+
             var elementsOfProjectFiles = new List<XElement>();
             foreach (var projFile in fileProjects)
             {
+                fileSystem.File.Copy(projFile, $"{projFile}.backup", true);
+
                 var docProjFile = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
 
                 // search for ItemGroup with ProjectElementTypes and for ItemGroup with ProjectElementTypes|Condition
@@ -62,13 +71,13 @@ namespace DotNetSortRefs.Xml
                             Name = ConstConfig.PropsElementTypes
                         };
                         value.Add(newElement);
+                        element.RemoveVersion();
                     }
                 }
+                await XmlHelper.SaveXDocument(fileSystem, projFile, docProjFile, FileMode.Truncate);
             }
-            
-            await using Stream sw = new FileStream(fileSystem.Path.Combine(path, @"Directory.Packages.props"), FileMode.OpenOrCreate);
-            await doc.SaveAsync(sw, SaveOptions.None, CancellationToken.None);
-            await sw.FlushAsync().ConfigureAwait(false);
+
+            await XmlHelper.SaveXDocument(fileSystem, directoryPackagesPropsFilePath, doc, directoryPackagesPropsFileMode);
 
             return result;
         }
@@ -86,7 +95,7 @@ namespace DotNetSortRefs.Xml
             }
         }
 
-        public static XElement? CreateItemGroup(this XElement inputElement, XElement nodeBeFor)
+        private static XElement? CreateItemGroup(this XElement inputElement, XElement nodeBeFor)
         {
             var condition = inputElement.GetCondition();
 
@@ -101,7 +110,7 @@ namespace DotNetSortRefs.Xml
             return null;
         }
 
-        public static string GetCondition(this XElement element)
+        private static string GetCondition(this XElement element)
         {
             var condition = element.FirstAttribute;
             if (condition != null &&
@@ -110,6 +119,12 @@ namespace DotNetSortRefs.Xml
                 return condition.Value;
             }
             return null;
+        }
+
+        private static void RemoveVersion(this XElement element)
+        {
+            var attribute = element.Attribute(ConstConfig.Version);
+            attribute?.Remove();
         }
     }
 }

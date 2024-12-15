@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
@@ -100,5 +101,14 @@ namespace DotNetSortRefs.Xml
             }
             return attributesOfProjectFiles;
         }
+
+        public static async Task SaveXDocument(IFileSystem fileSystem, string path, XDocument doc, FileMode fileMode)
+        {
+            await using Stream sw = new FileStream(path, fileMode);
+            await sw.FlushAsync().ConfigureAwait(false);
+            await doc.SaveAsync(sw, SaveOptions.None, CancellationToken.None);
+            
+        }
+
     }
 }

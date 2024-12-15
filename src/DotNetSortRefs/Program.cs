@@ -13,8 +13,8 @@ using System.Threading.Tasks;
 namespace DotNetSortRefs
 {
     [Command(
-        Name = "dotnet sort-refs",
-        FullName = "A .NET Core global tool to alphabetically sort package references in csproj or fsproj.")]
+        Name = "dotnet sort-and-sync-refs",
+        FullName = "A .NET Core global tool to alphabetically sort package references, create central package management in csproj, vbproj or fsproj.")]
     [VersionOptionFromMember(MemberName = nameof(GetVersion))]
     internal class Program : CommandBase
     {
@@ -64,8 +64,7 @@ namespace DotNetSortRefs
         [Option(CommandOptionType.NoValue, Description = "Specifies whether to enable Central Package Management and create a file called \"Directory.Packages.props\".",
             ShortName = "c", LongName = "create")]
         public bool DoCreatePackageVersions { get; set; } = false;
-
-
+        
         private static string GetVersion() => typeof(Program)
             .Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
