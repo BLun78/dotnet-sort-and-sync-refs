@@ -66,18 +66,17 @@ namespace DotNetSortRefs
             ShortName = "c", LongName = "create")]
         public bool DoCreatePackageVersions { get; set; } = false;
 
-        private static string GetVersion() =>$"{typeof(Program)
+        private static string GetVersion() => $"{typeof(Program)
             .Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-            ?.InformationalVersion} - {GetBuildDate} UTC" ;
-
-
+            ?.InformationalVersion} - {GetBuildDate} UTC";
+        
         private static string GetBuildDate => DateTime.ParseExact(typeof(Program)
             .Assembly
             .GetCustomAttribute<AssemblyMetadataAttribute>()
             ?.Value
             , "yyyyMMddHHmmss", new DateTimeFormatInfo(), DateTimeStyles.AdjustToUniversal).ToString();
-        
+
         private readonly IFileSystem _fileSystem;
         private readonly Reporter _reporter;
 
@@ -85,7 +84,6 @@ namespace DotNetSortRefs
         {
             _fileSystem = fileSystem;
             _reporter = reporter;
-
         }
 
         private async Task<int> OnExecute(CommandLineApplication app, IConsole console)
@@ -124,9 +122,16 @@ namespace DotNetSortRefs
                     return 2;
                 }
 
+                _reporter.Output("Running analysis ...");
                 var projFilesWithNonSortedReferences = await _fileSystem
-                    .Inspect(allFiles)
+                    .Inspect(_reporter, allFiles)
                     .ConfigureAwait(false);
+
+                if (projFilesWithNonSortedReferences == null)
+                {
+                    _reporter.Do("Please solve the issue of the Project file(s).");
+                    return 4;
+                }
 
                 if (IsInspect)
                 {
@@ -157,8 +162,9 @@ namespace DotNetSortRefs
                 {
                     _reporter.Output("Running create a Central Package Management file ( \"Directory.Packages.props\") ...");
                     result = await _fileSystem
-                        .CreatePackageVersions(fileProjects, Path)
+                        .CreatePackageVersions(_reporter, fileProjects, Path)
                         .ConfigureAwait(false);
+
                     if (result == 0)
                     {
                         result = await _fileSystem
@@ -172,7 +178,6 @@ namespace DotNetSortRefs
                 }
                 else
                 {
-                    _reporter.Output("Running sort package references ...");
                     result = await _fileSystem
                         .SortReferences(_reporter, projFilesWithNonSortedReferences)
                         .ConfigureAwait(false);
@@ -211,10 +216,14 @@ namespace DotNetSortRefs
             ICollection<string> projFiles,
             ICollection<string> projFilesWithNonSortedReferences)
         {
-            var max = projFiles.Max(x => x.Length);
+            var max = projFiles
+                .Max(x => x.Length);
+
             foreach (var proj in projFiles)
             {
-                var paddedProjectFile = proj.PadRight(max);
+                var paddedProjectFile = proj
+                    .PadRight(max);
+
                 if (projFilesWithNonSortedReferences.Contains(proj))
                 {
                     _reporter.Error($"» {paddedProjectFile} - X");

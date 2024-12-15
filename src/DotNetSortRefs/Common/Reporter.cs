@@ -21,5 +21,7 @@ namespace DotNetSortRefs.Common
         public virtual void Do(string message)
             => WriteLine(Console.Out, message, ConsoleColor.DarkCyan);
 
+        public virtual void NotOk(string message)
+            => WriteLine(Console.Out, message, ConsoleColor.DarkYellow);
     }
 }

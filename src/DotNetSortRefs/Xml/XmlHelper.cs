@@ -1,4 +1,5 @@
-﻿using DotNetSortRefs.Common;
+﻿using System;
+using DotNetSortRefs.Common;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
@@ -10,37 +11,52 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using System.Xml.Xsl;
+using McMaster.Extensions.CommandLineUtils;
 
 namespace DotNetSortRefs.Xml
 {
     internal static class XmlHelper
     {
-        public static async Task<List<string>> Inspect(this IFileSystem fileSystem, IEnumerable<string> projFiles)
+        public static async Task<List<string>> Inspect(this IFileSystem fileSystem, Reporter reporter, IEnumerable<string> projFiles)
         {
             var projFilesWithNonSortedReferences = new List<string>();
 
-
             foreach (var projFile in projFiles)
             {
-                var doc = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
 
-                var itemGroups = doc.XPathSelectElements($"//ItemGroup[{ConstConfig.AllElementTypes}]");
-
-                foreach (var itemGroup in itemGroups)
+                try
                 {
-                    var references = itemGroup.XPathSelectElements(ConstConfig.AllElementTypes)
-                        .Select(x => x.Attribute("Include")?.Value.ToLowerInvariant()).ToList();
+                    var doc = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
 
-                    if (references.Count <= 1) continue;
+                    var itemGroups = doc.XPathSelectElements($"//ItemGroup[{ConstConfig.AllElementTypes}]");
 
-                    var sortedReferences = references.OrderBy(x => x).ToList();
-
-                    var result = references.SequenceEqual(sortedReferences);
-
-                    if (!result && !projFilesWithNonSortedReferences.Contains(projFile))
+                    foreach (var itemGroup in itemGroups)
                     {
-                        projFilesWithNonSortedReferences.Add(projFile);
+                        var references = itemGroup.XPathSelectElements(ConstConfig.AllElementTypes)
+                            .Select(x => x.Attribute("Include")?.Value.ToLowerInvariant()).ToList();
+
+                        if (references.Count <= 1) continue;
+
+                        var sortedReferences = references.OrderBy(x => x).ToList();
+
+                        var result = references.SequenceEqual(sortedReferences);
+
+                        if (!result && !projFilesWithNonSortedReferences.Contains(projFile))
+                        {
+                            reporter.NotOk($"» {projFile}");
+                            projFilesWithNonSortedReferences.Add(projFile);
+                        }
+                        else
+                        {
+                            reporter.Ok($"» {projFile}");
+                        }
                     }
+                }
+                catch (Exception e)
+                {
+                    reporter.Error($"» {projFile}");
+                    reporter.Error(e.Message);
+                    return null;
                 }
             }
 
@@ -57,20 +73,29 @@ namespace DotNetSortRefs.Xml
             return xslt;
         }
 
-        public static async Task<int> SortReferences(this IFileSystem fileSystem, Reporter report, IEnumerable<string> projFiles)
+        public static async Task<int> SortReferences(this IFileSystem fileSystem, Reporter reporter, IEnumerable<string> projFiles)
         {
+            reporter.Output("Running sort package references ...");
             var result = 5;
             var xslt = GetXslTransform();
 
             foreach (var projFile in projFiles)
             {
-                report.Do($"» {projFile}");
-
-                await using var sw = new StringWriter();
-                var doc = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
-                xslt.Transform(doc.CreateNavigator(), null, sw);
-                await fileSystem.File.WriteAllTextAsync(projFile, sw.ToString()).ConfigureAwait(false);
-                result = 0;
+                try
+                {
+                    await using var sw = new StringWriter();
+                    var doc = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
+                    xslt.Transform(doc.CreateNavigator(), null, sw);
+                    await fileSystem.File.WriteAllTextAsync(projFile, sw.ToString()).ConfigureAwait(false); 
+                    
+                    reporter.Ok($"» {projFile}");
+                    result = 0;
+                }
+                catch (Exception e)
+                {
+                    reporter.Error($"» {projFile}");
+                    reporter.Error(e.Message);
+                }
             }
 
             return result;

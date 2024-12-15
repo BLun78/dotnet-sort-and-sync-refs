@@ -1,4 +1,5 @@
 ﻿using DotNetSortRefs.Common;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
@@ -23,12 +24,15 @@ namespace DotNetSortRefs.Xml
             """;
 
         public static async Task<int> CreatePackageVersions(this IFileSystem fileSystem,
+            Reporter reporter,
             List<string> fileProjects,
             string path)
         {
             var result = 3;
+            var error = false;
 
             var directoryPackagesPropsFilePath = fileSystem.Path.Combine(path, @"Directory.Packages.props");
+            var directoryPackagesPropsFileBackupPath = $"{directoryPackagesPropsFilePath}.backup";
             var directoryPackagesPropsFileMode = FileMode.CreateNew;
             var doc = XDocument.Parse(initalFile);
             var itemGroup = doc.XPathSelectElements($"//ItemGroup").First();
@@ -40,44 +44,66 @@ namespace DotNetSortRefs.Xml
 
             if (fileSystem.File.Exists(directoryPackagesPropsFilePath))
             {
-                fileSystem.File.Copy(directoryPackagesPropsFilePath, $"{directoryPackagesPropsFilePath}.backup", true);
+                reporter.Do($"» Backup {directoryPackagesPropsFilePath} to {directoryPackagesPropsFileBackupPath}");
+                fileSystem.File.Copy(directoryPackagesPropsFilePath, directoryPackagesPropsFileBackupPath, true);
                 directoryPackagesPropsFileMode = FileMode.Truncate;
             }
 
             var elementsOfProjectFiles = new List<XElement>();
             foreach (var projFile in fileProjects)
             {
-                fileSystem.File.Copy(projFile, $"{projFile}.backup", true);
-
-                var docProjFile = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
-
-                // search for ItemGroup with ProjectElementTypes and for ItemGroup with ProjectElementTypes|Condition
-                var itemGroups = docProjFile
-                    .XPathSelectElements($"//ItemGroup[{ConstConfig.ProjectElementTypes}] | //ItemGroup[{ConstConfig.Condition} and {ConstConfig.ProjectElementTypes}]")
-                    .ToList();
-                CreateItemGroups(itemGroups, itemGroup, dict);
-
-                elementsOfProjectFiles.AddRange(itemGroups);
-
-                var referenceElementsOfProjectFiles = elementsOfProjectFiles.GetReferenceElements();
-                foreach (var element in referenceElementsOfProjectFiles)
+                try
                 {
-                    var condition = element.Parent.GetCondition() ?? WithOutCondition;
+                    result = 3;
+                    var backupFilePath = $"{projFile}.backup";
+                    reporter.Do($"» Backup {projFile} to {backupFilePath}");
+                    fileSystem.File.Copy(projFile, backupFilePath, true);
 
-                    if (dict.TryGetValue(condition, out var value))
+                    var docProjFile = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
+
+                    // search for ItemGroup with ProjectElementTypes and for ItemGroup with ProjectElementTypes|Condition
+                    var itemGroups = docProjFile
+                        .XPathSelectElements($"//ItemGroup[{ConstConfig.ProjectElementTypes}] | //ItemGroup[{ConstConfig.Condition} and {ConstConfig.ProjectElementTypes}]")
+                        .ToList();
+                    CreateItemGroups(itemGroups, itemGroup, dict);
+
+                    elementsOfProjectFiles.AddRange(itemGroups);
+
+                    var referenceElementsOfProjectFiles = elementsOfProjectFiles.GetReferenceElements();
+                    foreach (var element in referenceElementsOfProjectFiles)
                     {
-                        var newElement = new XElement(element)
+                        var condition = element.Parent.GetCondition() ?? WithOutCondition;
+
+                        if (dict.TryGetValue(condition, out var value))
                         {
-                            Name = ConstConfig.PropsElementTypes
-                        };
-                        value.Add(newElement);
-                        element.RemoveVersion();
+                            var newElement = new XElement(element)
+                            {
+                                Name = ConstConfig.PropsElementTypes
+                            };
+                            value.Add(newElement);
+                            element.RemoveVersion();
+                        }
                     }
+                    await XmlHelper.SaveXDocument(fileSystem, projFile, docProjFile, FileMode.Truncate);
+                    reporter.Ok($"» Updated {projFile}");
+                    result = 0;
                 }
-                await XmlHelper.SaveXDocument(fileSystem, projFile, docProjFile, FileMode.Truncate);
+                catch (Exception e)
+                {
+                    reporter.Error($"» {projFile}");
+                    reporter.Error(e.Message);
+                    reporter.Do("An error is thrown, please use the backup files to restore them!");
+                    error = true;
+                    break;
+                }
             }
 
+            if (error)
+            {
+                return -5;
+            }
             await XmlHelper.SaveXDocument(fileSystem, directoryPackagesPropsFilePath, doc, directoryPackagesPropsFileMode);
+            reporter.Ok($"» Created {directoryPackagesPropsFilePath}");
 
             return result;
         }
