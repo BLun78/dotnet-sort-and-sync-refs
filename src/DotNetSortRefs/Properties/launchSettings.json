@@ -15,6 +15,10 @@
     "DotNetSortRefs - Sort": {
       "commandName": "Project",
       "commandLineArgs": ""
+    },
+    "DotNetSortRefs - Help": {
+      "commandName": "Project",
+      "commandLineArgs": "-h"
     }
   }
 }
