@@ -4,6 +4,7 @@ using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
@@ -64,12 +65,19 @@ namespace DotNetSortRefs
         [Option(CommandOptionType.NoValue, Description = "Specifies whether to enable Central Package Management and create a file called \"Directory.Packages.props\".",
             ShortName = "c", LongName = "create")]
         public bool DoCreatePackageVersions { get; set; } = false;
-        
-        private static string GetVersion() => typeof(Program)
+
+        private static string GetVersion() =>$"{typeof(Program)
             .Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-            ?.InformationalVersion;
+            ?.InformationalVersion} - {GetBuildDate} UTC" ;
 
+
+        private static string GetBuildDate => DateTime.ParseExact(typeof(Program)
+            .Assembly
+            .GetCustomAttribute<AssemblyMetadataAttribute>()
+            ?.Value
+            , "yyyyMMddHHmmss", new DateTimeFormatInfo(), DateTimeStyles.AdjustToUniversal).ToString();
+        
         private readonly IFileSystem _fileSystem;
         private readonly Reporter _reporter;
 
