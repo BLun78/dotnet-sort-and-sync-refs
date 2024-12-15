@@ -15,6 +15,8 @@ namespace DotNetSortRefs.Xml
         public static async Task<int> RemovePackageVersions(this IFileSystem fileSystem, Reporter report, IEnumerable<string> projFiles, IEnumerable<string> propsFiles)
         {
             var result = 4;
+
+            // collect Project references
             var elementsOfProjectFiles = new List<XElement>();
             foreach (var projFile in projFiles)
             {
@@ -36,6 +38,7 @@ namespace DotNetSortRefs.Xml
                 var itemGroups = docPropsFile.XPathSelectElements($"//ItemGroup[{ConstConfig.PropsElementTypes}]");
                 var attributesOfPropsFiles = itemGroups.ToList().GetReferenceElements();
 
+                // compare project references and PackageVersion
                 foreach (var attributesOfPropsFile in attributesOfPropsFiles)
                 {
                     var name = attributesOfPropsFile.FirstAttribute?.Value;
@@ -49,11 +52,13 @@ namespace DotNetSortRefs.Xml
                     }
                 }
 
+                // remove PackageVersion
                 foreach (var element in removeList)
                 {
                     element.Remove();
                 }
 
+                // write new file
                 await using Stream sw = new FileStream(propsFile, FileMode.Truncate);
                 await docPropsFile.SaveAsync(sw, SaveOptions.None, CancellationToken.None);
                 await sw.FlushAsync().ConfigureAwait(false);
