@@ -1,6 +1,6 @@
 using McMaster.Extensions.CommandLineUtils;
 
-namespace DotNetSortRefs
+namespace DotNetSortRefs.Xml
 {
     [HelpOption]
     internal abstract class CommandBase
