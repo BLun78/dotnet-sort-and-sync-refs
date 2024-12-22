@@ -162,12 +162,12 @@ namespace DotNetSortRefs
                 {
                     _reporter.Output("Running remove not needed PackageVersion ...");
                     result = await _fileSystem
-                        .RemovePackageVersions(_reporter, fileProjects, fileProps)
+                        .RemovePackageVersions(_reporter, fileProjects, fileProps, DryRun)
                         .ConfigureAwait(false);
                     if (result == 0)
                     {
                         result = await _fileSystem
-                            .SortReferences(_reporter, projFilesWithNonSortedReferences)
+                            .SortReferences(_reporter, projFilesWithNonSortedReferences, DryRun)
                             .ConfigureAwait(false);
                     }
                     else
@@ -179,13 +179,13 @@ namespace DotNetSortRefs
                 {
                     _reporter.Output("Running create a Central Package Management file ( \"Directory.Packages.props\") ...");
                     result = await _fileSystem
-                        .CreatePackageVersions(_reporter, fileProjects, Path)
+                        .CreatePackageVersions(_reporter, fileProjects, Path, DryRun)
                         .ConfigureAwait(false);
 
                     if (result == 0)
                     {
                         result = await _fileSystem
-                            .SortReferences(_reporter, projFilesWithNonSortedReferences)
+                            .SortReferences(_reporter, projFilesWithNonSortedReferences, DryRun)
                             .ConfigureAwait(false);
                     }
                     else
@@ -196,7 +196,7 @@ namespace DotNetSortRefs
                 else
                 {
                     result = await _fileSystem
-                        .SortReferences(_reporter, projFilesWithNonSortedReferences)
+                        .SortReferences(_reporter, projFilesWithNonSortedReferences, DryRun)
                         .ConfigureAwait(false);
                 }
 

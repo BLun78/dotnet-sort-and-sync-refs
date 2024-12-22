@@ -12,7 +12,12 @@ namespace DotNetSortRefs.Xml
 {
     internal static class SyncPackageVersions
     {
-        public static async Task<int> RemovePackageVersions(this IFileSystem fileSystem, Reporter report, IEnumerable<string> projFiles, IEnumerable<string> propsFiles)
+        public static async Task<int> RemovePackageVersions(
+            this IFileSystem fileSystem, 
+            Reporter report,
+            IEnumerable<string> projFiles, 
+            IEnumerable<string> propsFiles, 
+            bool dryRun)
         {
             var result = 4;
 
@@ -58,8 +63,11 @@ namespace DotNetSortRefs.Xml
                     element.Remove();
                 }
 
-                // write new file
-                await XmlHelper.SaveXDocument(fileSystem, propsFile, docPropsFile, FileMode.CreateNew);
+                // write file
+                if (!dryRun)
+                {
+                    await XmlHelper.SaveXDocument(fileSystem, propsFile, docPropsFile, FileMode.CreateNew);
+                }
 
                 result = 0;
             }

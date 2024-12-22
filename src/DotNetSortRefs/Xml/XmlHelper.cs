@@ -16,7 +16,10 @@ namespace DotNetSortRefs.Xml
 {
     internal static class XmlHelper
     {
-        public static async Task<List<string>> Inspect(this IFileSystem fileSystem, Reporter reporter, IEnumerable<string> projFiles)
+        public static async Task<List<string>> Inspect(
+            this IFileSystem fileSystem, 
+            Reporter reporter, 
+            IEnumerable<string> projFiles)
         {
             var projFilesWithNonSortedReferences = new List<string>();
 
@@ -73,7 +76,8 @@ namespace DotNetSortRefs.Xml
             return xslt;
         }
 
-        public static async Task<int> SortReferences(this IFileSystem fileSystem, Reporter reporter, IEnumerable<string> projFiles)
+        public static async Task<int> SortReferences(this IFileSystem fileSystem, Reporter reporter,
+            IEnumerable<string> projFiles, bool dryRun)
         {
             reporter.Output("Running sort package references ...");
             var result = 5;
@@ -86,7 +90,12 @@ namespace DotNetSortRefs.Xml
                     await using var sw = new StringWriter();
                     var doc = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
                     xslt.Transform(doc.CreateNavigator(), null, sw);
-                    await fileSystem.File.WriteAllTextAsync(projFile, sw.ToString()).ConfigureAwait(false);
+                    
+                    // write file
+                    if (!dryRun)
+                    {
+                        await fileSystem.File.WriteAllTextAsync(projFile, sw.ToString()).ConfigureAwait(false);
+                    }
 
                     reporter.Ok($"» {projFile}");
                     result = 0;

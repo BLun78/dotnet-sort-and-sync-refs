@@ -25,7 +25,8 @@ namespace DotNetSortRefs.Xml
         public static async Task<int> CreatePackageVersions(this IFileSystem fileSystem,
             Reporter reporter,
             List<string> fileProjects,
-            string path)
+            string path, 
+            bool dryRun)
         {
             var result = 3;
             var error = false;
@@ -44,7 +45,10 @@ namespace DotNetSortRefs.Xml
             if (fileSystem.File.Exists(directoryPackagesPropsFilePath))
             {
                 reporter.Do($"» Backup {directoryPackagesPropsFilePath} to {directoryPackagesPropsFileBackupPath}");
-                fileSystem.File.Copy(directoryPackagesPropsFilePath, directoryPackagesPropsFileBackupPath, true);
+                if (!dryRun)
+                {
+                    fileSystem.File.Copy(directoryPackagesPropsFilePath, directoryPackagesPropsFileBackupPath, true);
+                }
                 directoryPackagesPropsFileMode = FileMode.Truncate;
             }
 
@@ -56,7 +60,10 @@ namespace DotNetSortRefs.Xml
                     result = 3;
                     var backupFilePath = $"{projFile}.backup";
                     reporter.Do($"» Backup {projFile} to {backupFilePath}");
-                    fileSystem.File.Copy(projFile, backupFilePath, true);
+                    if (!dryRun)
+                    {
+                        fileSystem.File.Copy(projFile, backupFilePath, true);
+                    }
 
                     var docProjFile = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
 
@@ -84,7 +91,11 @@ namespace DotNetSortRefs.Xml
                         }
                     }
 
-                    await XmlHelper.SaveXDocument(fileSystem, projFile, docProjFile, FileMode.Truncate);
+                    // write file
+                    if (!dryRun)
+                    {
+                        await XmlHelper.SaveXDocument(fileSystem, projFile, docProjFile, FileMode.Truncate);
+                    }
                     reporter.Ok($"» Updated {projFile}");
                     result = 0;
                 }
@@ -102,7 +113,12 @@ namespace DotNetSortRefs.Xml
             {
                 return -5;
             }
-            await XmlHelper.SaveXDocument(fileSystem, directoryPackagesPropsFilePath, doc, directoryPackagesPropsFileMode);
+
+            // write file
+            if (!dryRun)
+            {
+                await XmlHelper.SaveXDocument(fileSystem, directoryPackagesPropsFilePath, doc, directoryPackagesPropsFileMode);
+            }
             reporter.Ok($"» Created {directoryPackagesPropsFilePath}");
 
             return result;
