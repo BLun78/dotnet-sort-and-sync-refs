@@ -69,7 +69,7 @@ namespace DotnetSortAndSyncRefs.Xml
         public static XslCompiledTransform GetXslTransform()
         {
             var assembly = Assembly.GetExecutingAssembly();
-            using var stream = assembly.GetManifestResourceStream("DotNetSortRefs.Sort.xsl");
+            using var stream = assembly.GetManifestResourceStream($"{nameof(DotnetSortAndSyncRefs)}.Sort.xsl");
             using var reader = XmlReader.Create(stream!);
             var xslt = new XslCompiledTransform();
             xslt.Load(reader);
