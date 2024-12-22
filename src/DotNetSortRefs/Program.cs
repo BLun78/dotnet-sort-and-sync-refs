@@ -17,7 +17,8 @@ namespace DotNetSortRefs
         Name = "dotnet sort-and-sync-refs",
         FullName = "A .NET Core global tool to alphabetically sort package references, create central package management in csproj, vbproj or fsproj.")]
     [VersionOptionFromMember(MemberName = nameof(GetVersion))]
-    internal class Program : CommandBase
+    [HelpOption]
+    internal class Program
     {
         static async Task<int> Main(string[] args)
         {
@@ -66,11 +67,26 @@ namespace DotNetSortRefs
             ShortName = "c", LongName = "create")]
         public bool DoCreatePackageVersions { get; set; } = false;
 
+        [Option(CommandOptionType.NoValue, Description = "Specifies whether to do a dry run. It shows the effected actions, but do not change the files.",
+            ShortName = "dr", LongName = "dry-run")]
+        public bool DryRun { get; set; } = false;
+
+        private HashSet<string> ProjectFilePostfix = new(StringComparer.OrdinalIgnoreCase) {
+            ".csproj",
+            ".vbproj",
+            ".fsproj",
+        };
+
+        private HashSet<string> AdditionalFilePostfix = new(StringComparer.OrdinalIgnoreCase) {
+            ".props",
+            ".targets"
+        };
+
         private static string GetVersion() => $"{typeof(Program)
             .Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
             ?.InformationalVersion} - {GetBuildDate} UTC";
-        
+
         private static string GetBuildDate => DateTime.ParseExact(typeof(Program)
             .Assembly
             .GetCustomAttribute<AssemblyMetadataAttribute>()
@@ -79,14 +95,16 @@ namespace DotNetSortRefs
 
         private readonly IFileSystem _fileSystem;
         private readonly Reporter _reporter;
+        private readonly IConsole _console;
 
-        public Program(IFileSystem fileSystem, Reporter reporter)
+        public Program(IFileSystem fileSystem, Reporter reporter, IConsole console)
         {
             _fileSystem = fileSystem;
             _reporter = reporter;
+            _console = console;
         }
 
-        private async Task<int> OnExecute(CommandLineApplication app, IConsole console)
+        private async Task<int> OnExecute(CommandLineApplication app)
         {
             try
             {
@@ -104,14 +122,13 @@ namespace DotNetSortRefs
 
                 var result = -10;
 
-                var extensionsProjects = new[] { ".csproj", ".fsproj", ".vbproj" };
-                var extensionsProps = new[] { ".props" };
-                var allExtensions = new List<string>();
-                allExtensions.AddRange(extensionsProjects);
-                allExtensions.AddRange(extensionsProps);
 
-                var fileProjects = LoadFilesFromExtension(extensionsProjects);
-                var fileProps = LoadFilesFromExtension(extensionsProps);
+                var allExtensions = new List<string>();
+                allExtensions.AddRange(ProjectFilePostfix);
+                allExtensions.AddRange(AdditionalFilePostfix);
+
+                var fileProjects = LoadFilesFromExtension(ProjectFilePostfix);
+                var fileProps = LoadFilesFromExtension(AdditionalFilePostfix);
                 var allFiles = new List<string>();
                 allFiles.AddRange(fileProjects);
                 allFiles.AddRange(fileProps);
