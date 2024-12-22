@@ -1,5 +1,4 @@
-﻿using DotNetSortRefs.Common;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
@@ -7,8 +6,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.XPath;
+using DotnetSortAndSyncRefs.Common;
 
-namespace DotNetSortRefs.Xml
+namespace DotnetSortAndSyncRefs.Xml
 {
     internal static class CreatePackageVersion
     {

@@ -1,18 +1,21 @@
-﻿using DotNetSortRefs.Common;
-using DotNetSortRefs.Xml;
-using McMaster.Extensions.CommandLineUtils;
-using Microsoft.Extensions.DependencyInjection;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
+using DotnetSortAndSyncRefs.Common;
+using DotnetSortAndSyncRefs.Xml;
+using McMaster.Extensions.CommandLineUtils;
+using Microsoft.Extensions.DependencyInjection;
+using NuGet.Common;
 using NuGet.Protocol;
+using NuGet.Protocol.Core.Types;
 
-namespace DotNetSortRefs
+namespace DotnetSortAndSyncRefs
 {
     [Command(
         Name = "dotnet sort-and-sync-refs",
@@ -23,14 +26,14 @@ namespace DotNetSortRefs
     {
         static async Task<int> Main(string[] args)
         {
-            var nuget = new NugateUpdateVersion();
-            await nuget.Test();
-            await nuget.GetMetagdata();
-
             var provider = new ServiceCollection()
                 .AddSingleton(PhysicalConsole.Singleton)
-                .AddSingleton<Reporter>(provider => new Reporter(provider.GetService<IConsole>()!))
+                .AddSingleton<Reporter>(provider => new Reporter(provider.GetRequiredService<IConsole>()!))
                 .AddSingleton<IFileSystem, FileSystem>()
+                .AddSingleton<SourceCacheContext>()
+                .AddSingleton<NuGetRepository>()
+                .AddSingleton<SourceRepository>(provider => Repository.Factory.GetCoreV3("https://api.nuget.org/v3/index.json"))
+                .AddSingleton<ILogger,Logger>()
                 .BuildServiceProvider();
 
             await using var providerDisposeTask = provider.ConfigureAwait(false);
@@ -101,12 +104,18 @@ namespace DotNetSortRefs
         private readonly IFileSystem _fileSystem;
         private readonly Reporter _reporter;
         private readonly IConsole _console;
+        private readonly NuGetRepository _nuGetUpdateVersion;
 
-        public Program(IFileSystem fileSystem, Reporter reporter, IConsole console)
+        public Program(
+            IFileSystem fileSystem, 
+            Reporter reporter, 
+            IConsole console,
+            NuGetRepository nuGetUpdateVersion)
         {
             _fileSystem = fileSystem;
             _reporter = reporter;
             _console = console;
+            _nuGetUpdateVersion = nuGetUpdateVersion;
         }
 
         private async Task<int> OnExecute(CommandLineApplication app)
@@ -126,7 +135,8 @@ namespace DotNetSortRefs
                 }
 
                 var result = -10;
-
+                var res= await _nuGetUpdateVersion.GetAllVersionsAsync("Microsoft.Extensions.DependencyInjection");
+                var res2= await _nuGetUpdateVersion.GetMetadataAsync("Microsoft.Extensions.DependencyInjection");
 
                 var allExtensions = new List<string>();
                 allExtensions.AddRange(ProjectFilePostfix);

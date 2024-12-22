@@ -1,5 +1,4 @@
-﻿using DotNetSortRefs.Common;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
@@ -11,8 +10,9 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using System.Xml.Xsl;
+using DotnetSortAndSyncRefs.Common;
 
-namespace DotNetSortRefs.Xml
+namespace DotnetSortAndSyncRefs.Xml
 {
     internal static class XmlHelper
     {

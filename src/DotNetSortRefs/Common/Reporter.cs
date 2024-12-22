@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace DotNetSortRefs.Common
+namespace DotnetSortAndSyncRefs.Common
 {
     internal class Reporter : ConsoleReporter, IReporter
     {

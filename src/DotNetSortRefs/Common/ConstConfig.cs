@@ -1,4 +1,4 @@
-﻿namespace DotNetSortRefs.Common
+﻿namespace DotnetSortAndSyncRefs.Common
 {
     internal static class ConstConfig
     {
