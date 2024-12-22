@@ -33,7 +33,10 @@ namespace DotnetSortAndSyncRefs
                 .AddSingleton<SourceCacheContext>()
                 .AddSingleton<NuGetRepository>()
                 .AddSingleton<SourceRepository>(provider => Repository.Factory.GetCoreV3("https://api.nuget.org/v3/index.json"))
-                .AddSingleton<ILogger,NuGetLogger>()
+                .AddSingleton<ILogger, NuGetLogger>()
+                .AddTransient<XmlAllElementFile>()
+                .AddTransient<XmlProjectFile>()
+                .AddTransient<XmlCentralPackageManagementFile>()
                 .BuildServiceProvider();
 
             await using var providerDisposeTask = provider.ConfigureAwait(false);
@@ -77,7 +80,7 @@ namespace DotnetSortAndSyncRefs
 
         [Option(CommandOptionType.NoValue, Description = "Specifies whether to do a dry run. It shows the effected actions, but do not change the files.",
             ShortName = "dr", LongName = "dry-run")]
-        public bool DryRun { get; set; } = false;
+        public bool IsDryRun { get; set; } = false;
 
         private HashSet<string> ProjectFilePostfix = new(StringComparer.OrdinalIgnoreCase) {
             ".csproj",
@@ -104,17 +107,20 @@ namespace DotnetSortAndSyncRefs
         private readonly IFileSystem _fileSystem;
         private readonly Reporter _reporter;
         private readonly IConsole _console;
+        private readonly IServiceProvider _serviceProvider;
         private readonly NuGetRepository _nuGetUpdateVersion;
 
         public Program(
-            IFileSystem fileSystem, 
-            Reporter reporter, 
+            IFileSystem fileSystem,
+            Reporter reporter,
             IConsole console,
+            IServiceProvider serviceProvider,
             NuGetRepository nuGetUpdateVersion)
         {
             _fileSystem = fileSystem;
             _reporter = reporter;
             _console = console;
+            _serviceProvider = serviceProvider;
             _nuGetUpdateVersion = nuGetUpdateVersion;
         }
 
@@ -135,8 +141,8 @@ namespace DotnetSortAndSyncRefs
                 }
 
                 var result = -10;
-                var res= await _nuGetUpdateVersion.GetAllVersionsAsync("Microsoft.Extensions.DependencyInjection");
-                var res2= await _nuGetUpdateVersion.GetMetadataAsync("Microsoft.Extensions.DependencyInjection");
+                var res = await _nuGetUpdateVersion.GetAllVersionsAsync("Microsoft.Extensions.DependencyInjection");
+                var res2 = await _nuGetUpdateVersion.GetMetadataAsync("Microsoft.Extensions.DependencyInjection");
 
                 var allExtensions = new List<string>();
                 allExtensions.AddRange(ProjectFilePostfix);
@@ -155,8 +161,8 @@ namespace DotnetSortAndSyncRefs
                 }
 
                 _reporter.Output("Running analysis ...");
-                var projFilesWithNonSortedReferences = await _fileSystem
-                    .Inspect(_reporter, allFiles)
+                var projFilesWithNonSortedReferences = await _serviceProvider
+                    .Inspect(allFiles, IsDryRun)
                     .ConfigureAwait(false);
 
                 if (projFilesWithNonSortedReferences == null)
@@ -176,13 +182,13 @@ namespace DotnetSortAndSyncRefs
                 else if (DoRemovePackageVersions)
                 {
                     _reporter.Output("Running remove not needed PackageVersion ...");
-                    result = await _fileSystem
-                        .RemovePackageVersions(_reporter, fileProjects, fileProps, DryRun)
+                    result = await _serviceProvider
+                        .RemovePackageVersions(fileProjects, fileProps, IsDryRun)
                         .ConfigureAwait(false);
                     if (result == 0)
                     {
                         result = await _fileSystem
-                            .SortReferences(_reporter, projFilesWithNonSortedReferences, DryRun)
+                            .SortReferences(_reporter, projFilesWithNonSortedReferences, IsDryRun)
                             .ConfigureAwait(false);
                     }
                     else
@@ -193,14 +199,14 @@ namespace DotnetSortAndSyncRefs
                 else if (DoCreatePackageVersions)
                 {
                     _reporter.Output("Running create a Central Package Management file ( \"Directory.Packages.props\") ...");
-                    result = await _fileSystem
-                        .CreatePackageVersions(_reporter, fileProjects, Path, DryRun)
+                    result = await _serviceProvider
+                        .CreatePackageVersions(fileProjects, Path, IsDryRun)
                         .ConfigureAwait(false);
 
                     if (result == 0)
                     {
                         result = await _fileSystem
-                            .SortReferences(_reporter, projFilesWithNonSortedReferences, DryRun)
+                            .SortReferences(_reporter, projFilesWithNonSortedReferences, IsDryRun)
                             .ConfigureAwait(false);
                     }
                     else
@@ -211,7 +217,7 @@ namespace DotnetSortAndSyncRefs
                 else
                 {
                     result = await _fileSystem
-                        .SortReferences(_reporter, projFilesWithNonSortedReferences, DryRun)
+                        .SortReferences(_reporter, projFilesWithNonSortedReferences, IsDryRun)
                         .ConfigureAwait(false);
                 }
 

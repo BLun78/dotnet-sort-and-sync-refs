@@ -11,36 +11,42 @@ using System.Xml.Linq;
 using System.Xml.XPath;
 using System.Xml.Xsl;
 using DotnetSortAndSyncRefs.Common;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DotnetSortAndSyncRefs.Xml
 {
     internal static class XmlHelper
     {
         public static async Task<List<string>> Inspect(
-            this IFileSystem fileSystem, 
-            Reporter reporter, 
-            IEnumerable<string> projFiles)
+            this IServiceProvider serviceProvider,
+            IEnumerable<string> projFiles,
+            bool isDryRun)
         {
             var projFilesWithNonSortedReferences = new List<string>();
+            var reporter = serviceProvider.GetRequiredService<Reporter>();
 
             foreach (var projFile in projFiles)
             {
 
                 try
                 {
-                    var doc = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
+                    var xmlFile = serviceProvider.GetRequiredService<XmlAllElementFile>();
+                    await xmlFile
+                        .LoadFileReadOnlyAsync(projFile)
+                        .ConfigureAwait(false);
 
-                    var itemGroups = doc.XPathSelectElements($"//ItemGroup[{ConstConfig.AllElementTypes}]");
-                    var dict = new Dictionary<string, List<XElement>>();
-
-                    foreach (var itemGroup in itemGroups)
+                    foreach (var itemGroup in xmlFile.ItemGroups)
                     {
-                        var references = itemGroup.XPathSelectElements(ConstConfig.AllElementTypes)
-                            .Select(x => x.Attribute("Include")?.Value.ToLowerInvariant()).ToList();
+                        var references = itemGroup
+                            .XPathSelectElements(ConstConfig.AllElementTypes)
+                            .Select(x => x.Attribute("Include")?.Value.ToLowerInvariant())
+                            .ToList();
 
                         if (references.Count <= 1) continue;
 
-                        var sortedReferences = references.OrderBy(x => x).ToList();
+                        var sortedReferences = references
+                            .OrderBy(x => x)
+                            .ToList();
 
                         var result = references.SequenceEqual(sortedReferences);
 
@@ -90,7 +96,7 @@ namespace DotnetSortAndSyncRefs.Xml
                     await using var sw = new StringWriter();
                     var doc = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
                     xslt.Transform(doc.CreateNavigator(), null, sw);
-                    
+
                     // write file
                     if (!dryRun)
                     {

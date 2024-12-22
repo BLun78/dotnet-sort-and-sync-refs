@@ -7,50 +7,30 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DotnetSortAndSyncRefs.Common;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DotnetSortAndSyncRefs.Xml
 {
     internal static class CreatePackageVersion
     {
-        private const string InitialFile =
-            """
-            <Project>
-              <PropertyGroup>
-                <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-              </PropertyGroup>
-              <ItemGroup />
-            </Project>
-            """;
-
-        public static async Task<int> CreatePackageVersions(this IFileSystem fileSystem,
-            Reporter reporter,
+        public static async Task<int> CreatePackageVersions(this IServiceProvider serviceProvider,
             List<string> fileProjects,
-            string path, 
+            string path,
             bool dryRun)
         {
             var result = 3;
             var error = false;
+            var fileSystem = serviceProvider.GetRequiredService<IFileSystem>();
+            var reporter = serviceProvider.GetRequiredService<Reporter>();
+            var centralPackageManagementFile = serviceProvider.GetRequiredService<XmlCentralPackageManagementFile>();
 
-            var directoryPackagesPropsFilePath = fileSystem.Path.Combine(path, @"Directory.Packages.props");
-            var directoryPackagesPropsFileBackupPath = $"{directoryPackagesPropsFilePath}.backup";
-            var directoryPackagesPropsFileMode = FileMode.CreateNew;
-            var doc = XDocument.Parse(InitialFile);
-            var itemGroup = doc.XPathSelectElements($"//ItemGroup").First();
+            centralPackageManagementFile.CreateCentralPackageManagementFile(path, dryRun);
+            var itemGroup = centralPackageManagementFile.Document.XPathSelectElements($"//ItemGroup").First();
 
             var dict = new Dictionary<string, XElement>
             {
                 { ConstConfig.WithOutCondition, itemGroup }
             };
-
-            if (fileSystem.File.Exists(directoryPackagesPropsFilePath))
-            {
-                reporter.Do($"» Backup {directoryPackagesPropsFilePath} to {directoryPackagesPropsFileBackupPath}");
-                if (!dryRun)
-                {
-                    fileSystem.File.Copy(directoryPackagesPropsFilePath, directoryPackagesPropsFileBackupPath, true);
-                }
-                directoryPackagesPropsFileMode = FileMode.Truncate;
-            }
 
             var elementsOfProjectFiles = new List<XElement>();
             foreach (var projFile in fileProjects)
@@ -58,17 +38,11 @@ namespace DotnetSortAndSyncRefs.Xml
                 try
                 {
                     result = 3;
-                    var backupFilePath = $"{projFile}.backup";
-                    reporter.Do($"» Backup {projFile} to {backupFilePath}");
-                    if (!dryRun)
-                    {
-                        fileSystem.File.Copy(projFile, backupFilePath, true);
-                    }
-
-                    var docProjFile = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
+                    var xmlProjectFile = serviceProvider.GetRequiredService<XmlProjectFile>();
+                    await xmlProjectFile.LoadFileAsync(projFile, dryRun).ConfigureAwait(false);
 
                     // search for ItemGroup with ProjectElementTypes and for ItemGroup with ProjectElementTypes|Condition
-                    var itemGroups = docProjFile
+                    var itemGroups = xmlProjectFile.Document
                         .XPathSelectElements($"//ItemGroup[{ConstConfig.ProjectElementTypes}] | //ItemGroup[{ConstConfig.Condition} and {ConstConfig.ProjectElementTypes}]")
                         .ToList();
                     CreateItemGroups(itemGroups, itemGroup, dict);
@@ -84,7 +58,7 @@ namespace DotnetSortAndSyncRefs.Xml
                         {
                             var newElement = new XElement(element)
                             {
-                                Name = ConstConfig.PropsElementTypes
+                                Name = ConstConfig.CentralPackageManagementElementTypes
                             };
                             value.Add(newElement);
                             element.RemoveVersion();
@@ -94,7 +68,9 @@ namespace DotnetSortAndSyncRefs.Xml
                     // write file
                     if (!dryRun)
                     {
-                        await XmlHelper.SaveXDocument(fileSystem, projFile, docProjFile, FileMode.Truncate);
+                        await xmlProjectFile
+                            .SaveAsync()
+                            .ConfigureAwait(false);
                     }
                     reporter.Ok($"» Updated {projFile}");
                     result = 0;
@@ -117,9 +93,11 @@ namespace DotnetSortAndSyncRefs.Xml
             // write file
             if (!dryRun)
             {
-                await XmlHelper.SaveXDocument(fileSystem, directoryPackagesPropsFilePath, doc, directoryPackagesPropsFileMode);
+                await centralPackageManagementFile
+                    .SaveAsync()
+                    .ConfigureAwait(false);
             }
-            reporter.Ok($"» Created {directoryPackagesPropsFilePath}");
+            reporter.Ok($"» Created {centralPackageManagementFile.FilePath}");
 
             return result;
         }

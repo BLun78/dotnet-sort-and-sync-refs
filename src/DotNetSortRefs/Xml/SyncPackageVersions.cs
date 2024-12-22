@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
@@ -6,16 +7,17 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DotnetSortAndSyncRefs.Common;
+using Microsoft.Extensions.DependencyInjection;
+using NuGet.Packaging;
 
 namespace DotnetSortAndSyncRefs.Xml
 {
     internal static class SyncPackageVersions
     {
         public static async Task<int> RemovePackageVersions(
-            this IFileSystem fileSystem, 
-            Reporter report,
-            IEnumerable<string> projFiles, 
-            IEnumerable<string> propsFiles, 
+            this IServiceProvider serviceProvider,
+            IEnumerable<string> projFiles,
+            IEnumerable<string> propsFiles,
             bool dryRun)
         {
             var result = 4;
@@ -24,9 +26,8 @@ namespace DotnetSortAndSyncRefs.Xml
             var elementsOfProjectFiles = new List<XElement>();
             foreach (var projFile in projFiles)
             {
-                var docProjFile = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false));
-                var itemGroups = docProjFile.XPathSelectElements($"//ItemGroup[{ConstConfig.ProjectElementTypes}]");
-                elementsOfProjectFiles.AddRange(itemGroups);
+                var xmlProjectFile = serviceProvider.GetRequiredService<XmlProjectFile>();
+                elementsOfProjectFiles.AddRange(xmlProjectFile.ItemGroups);
             }
             var referenceElementsOfProjectFiles = elementsOfProjectFiles.GetReferenceElements();
 
@@ -37,10 +38,10 @@ namespace DotnetSortAndSyncRefs.Xml
 
                 removeList.Clear();
 
-                var docPropsFile = XDocument.Parse(await fileSystem.File.ReadAllTextAsync(propsFile).ConfigureAwait(false));
+                var xmlCentralPackageManagementFile = serviceProvider.GetRequiredService<XmlCentralPackageManagementFile>();
+                await xmlCentralPackageManagementFile.LoadFileAsync(propsFile, dryRun).ConfigureAwait(false);
 
-                var itemGroups = docPropsFile.XPathSelectElements($"//ItemGroup[{ConstConfig.PropsElementTypes}]");
-                var attributesOfPropsFiles = itemGroups.ToList().GetReferenceElements();
+                var attributesOfPropsFiles = xmlCentralPackageManagementFile.ItemGroups.ToList().GetReferenceElements();
 
                 // compare project references and PackageVersion
                 foreach (var attributesOfPropsFile in attributesOfPropsFiles)
@@ -65,7 +66,7 @@ namespace DotnetSortAndSyncRefs.Xml
                 // write file
                 if (!dryRun)
                 {
-                    await XmlHelper.SaveXDocument(fileSystem, propsFile, docPropsFile, FileMode.CreateNew);
+                    await xmlCentralPackageManagementFile.SaveAsync();
                 }
 
                 result = 0;
