@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NuGet.Common;
+using NuGet.Protocol;
 
 namespace DotnetSortAndSyncRefs.Common
 {
@@ -43,7 +44,7 @@ namespace DotnetSortAndSyncRefs.Common
 
         public void LogError(string data)
         {
-            LogWarning(data);
+            _reporter.NotOk(data);
         }
 
         public void LogInformationSummary(string data)
@@ -88,7 +89,7 @@ namespace DotnetSortAndSyncRefs.Common
         {
             if (message == null) throw new ArgumentNullException(nameof(message));
 
-            Log(message.Level, message.ToString());
+            Log(message.Level, message.ToJson());
         }
 
         public Task LogAsync(ILogMessage message)
