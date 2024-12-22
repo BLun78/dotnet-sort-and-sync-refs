@@ -10,6 +10,7 @@ using System.IO.Abstractions;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using NuGet.Protocol;
 
 namespace DotNetSortRefs
 {
@@ -22,6 +23,10 @@ namespace DotNetSortRefs
     {
         static async Task<int> Main(string[] args)
         {
+            var nuget = new NugateUpdateVersion();
+            await nuget.Test();
+            await nuget.GetMetagdata();
+
             var provider = new ServiceCollection()
                 .AddSingleton(PhysicalConsole.Singleton)
                 .AddSingleton<Reporter>(provider => new Reporter(provider.GetService<IConsole>()!))
