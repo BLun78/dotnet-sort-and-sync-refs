@@ -33,7 +33,7 @@ namespace DotnetSortAndSyncRefs
                 .AddSingleton<SourceCacheContext>()
                 .AddSingleton<NuGetRepository>()
                 .AddSingleton<SourceRepository>(provider => Repository.Factory.GetCoreV3("https://api.nuget.org/v3/index.json"))
-                .AddSingleton<ILogger,Logger>()
+                .AddSingleton<ILogger,NuGetLogger>()
                 .BuildServiceProvider();
 
             await using var providerDisposeTask = provider.ConfigureAwait(false);

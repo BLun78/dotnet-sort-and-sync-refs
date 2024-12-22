@@ -7,11 +7,11 @@ using NuGet.Common;
 
 namespace DotnetSortAndSyncRefs.Common
 {
-    internal class Logger : ILogger
+    internal class NuGetLogger : ILogger
     {
         private readonly Reporter _reporter;
 
-        public Logger(Reporter reporter)
+        public NuGetLogger(Reporter reporter)
         {
             _reporter = reporter;
         }
