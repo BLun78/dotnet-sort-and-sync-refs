@@ -4,6 +4,10 @@
       "commandName": "Project",
       "commandLineArgs": "-c"
     },
+    "DotNetSortRefs - Create Dry-Run": {
+      "commandName": "Project",
+      "commandLineArgs": "-c -dr"
+    },
     "DotNetSortRefs - Inspect": {
       "commandName": "Project",
       "commandLineArgs": "-i"
