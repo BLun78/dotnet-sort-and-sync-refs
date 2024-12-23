@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using NuGet.Common;
-using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 
-namespace DotnetSortAndSyncRefs.Common
+namespace DotnetSortAndSyncRefs.NugetSpace
 {
     /// <summary>
     /// https://learn.microsoft.com/en-us/nuget/reference/nuget-client-sdk
@@ -28,7 +26,7 @@ namespace DotnetSortAndSyncRefs.Common
             _sourceRepository = sourceRepository;
             _logger = logger;
 
-            
+
             // only for info in dev process
             string frameworkName = Assembly.GetExecutingAssembly().GetCustomAttributes(true)
                 .OfType<System.Runtime.Versioning.TargetFrameworkAttribute>()

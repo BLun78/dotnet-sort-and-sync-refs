@@ -8,6 +8,8 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using DotnetSortAndSyncRefs.Common;
+using DotnetSortAndSyncRefs.NugetSpace;
+using DotnetSortAndSyncRefs.Processes;
 using DotnetSortAndSyncRefs.Xml;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,20 +26,33 @@ namespace DotnetSortAndSyncRefs
     [HelpOption]
     internal class Program
     {
+        public static Program Instance { get; private set; }
+
         static async Task<int> Main(string[] args)
         {
             var provider = new ServiceCollection()
+                // Reporter, Console and Commands
                 .AddSingleton(PhysicalConsole.Singleton)
                 .AddSingleton<Reporter>(provider => new Reporter(provider.GetRequiredService<IConsole>()!))
                 .AddSingleton<IFileSystem, FileSystem>()
-                .AddSingleton<SourceCacheContext>()
-                .AddSingleton<NuGetRepository>()
+
+                // Processors
                 .AddSingleton<Processor>()
+                .AddSingleton<CentralPackageManagement>()
+                .AddSingleton<SyncPackageVersions>()
+                .AddSingleton<SortReferences>()
+                .AddSingleton<Inspector>()
+
+                // Nuget 
+                .AddSingleton<SourceCacheContext>()
                 .AddSingleton<SourceRepository>(provider => Repository.Factory.GetCoreV3("https://api.nuget.org/v3/index.json"))
                 .AddSingleton<ILogger, NuGetLogger>()
+
+                // XML Files
                 .AddTransient<XmlAllElementFile>()
                 .AddTransient<XmlProjectFile>()
                 .AddTransient<XmlCentralPackageManagementFile>()
+
                 .BuildServiceProvider();
 
             await using var providerDisposeTask = provider.ConfigureAwait(false);
@@ -83,17 +98,6 @@ namespace DotnetSortAndSyncRefs
             ShortName = "dr", LongName = "dry-run")]
         public bool IsDryRun { get; set; } = false;
 
-        private HashSet<string> ProjectFilePostfix = new(StringComparer.OrdinalIgnoreCase) {
-            ".csproj",
-            ".vbproj",
-            ".fsproj",
-        };
-
-        private HashSet<string> AdditionalFilePostfix = new(StringComparer.OrdinalIgnoreCase) {
-            ".props",
-            ".targets"
-        };
-
         private static string GetVersion() => $"{typeof(Program)
             .Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
@@ -108,24 +112,17 @@ namespace DotnetSortAndSyncRefs
         private readonly Processor _processor;
         private readonly IFileSystem _fileSystem;
         private readonly Reporter _reporter;
-        private readonly IConsole _console;
-        private readonly IServiceProvider _serviceProvider;
-        private readonly NuGetRepository _nuGetUpdateVersion;
+        private Commands _command;
 
         public Program(
             Processor processor,
             IFileSystem fileSystem,
-            Reporter reporter,
-            IConsole console,
-            IServiceProvider serviceProvider,
-            NuGetRepository nuGetUpdateVersion)
+            Reporter reporter)
         {
             _processor = processor;
             _fileSystem = fileSystem;
             _reporter = reporter;
-            _console = console;
-            _serviceProvider = serviceProvider;
-            _nuGetUpdateVersion = nuGetUpdateVersion;
+            Program.Instance = this;
         }
 
         private async Task<int> OnExecute(CommandLineApplication app)
@@ -144,136 +141,30 @@ namespace DotnetSortAndSyncRefs
                     return ErrorCodes.DirectoryDoNotExists;
                 }
 
-                var result = -10;
-                var res = await _nuGetUpdateVersion.GetAllVersionsAsync("Microsoft.Extensions.DependencyInjection");
-                var res2 = await _nuGetUpdateVersion.GetMetadataAsync("Microsoft.Extensions.DependencyInjection");
-
-                var allExtensions = new List<string>();
-                allExtensions.AddRange(ProjectFilePostfix);
-                allExtensions.AddRange(AdditionalFilePostfix);
-
-                var fileProjects = LoadFilesFromExtension(ProjectFilePostfix);
-                var fileProps = LoadFilesFromExtension(AdditionalFilePostfix);
-                var allFiles = new List<string>();
-                allFiles.AddRange(fileProjects);
-                allFiles.AddRange(fileProps);
-
-                if (allFiles.Count == 0)
-                {
-                    _reporter.Error($"no '{string.Join(", ", allExtensions)}'' files found.");
-                    return ErrorCodes.FileDoNotExists;
-                }
-
-                _reporter.Output("Running analysis ...");
-                var projFilesWithNonSortedReferences = await _serviceProvider
-                    .Inspect(allFiles, IsDryRun)
-                    .ConfigureAwait(false);
-
-                if (projFilesWithNonSortedReferences == null)
-                {
-                    _reporter.Do("Please solve the issue of the Project file(s).");
-                    return ErrorCodes.ProjectFileHasNotAValidXmlFormat;
-                }
-
                 if (IsInspect)
                 {
-                    _reporter.Output("Running inspection ...");
-                    PrintInspectionResults(allFiles, projFilesWithNonSortedReferences);
-                    result = projFilesWithNonSortedReferences.Count > 0
-                        ? 0
-                        : 1;
-                }
-                else if (DoRemovePackageVersions)
-                {
-                    _reporter.Output("Running remove not needed PackageVersion ...");
-                    result = await _serviceProvider
-                        .RemovePackageVersions(fileProjects, fileProps, IsDryRun)
-                        .ConfigureAwait(false);
-                    if (result == ErrorCodes.Ok)
-                    {
-                        result = await _fileSystem
-                            .SortReferences(_reporter, projFilesWithNonSortedReferences, IsDryRun)
-                            .ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        result = ErrorCodes.RemoveFailed;
-                    }
+                    _command = Commands.Inspect;
                 }
                 else if (DoCreatePackageVersions)
                 {
-                    _reporter.Output("Running create a Central Package Management file ( \"Directory.Packages.props\") ...");
-                    result = await _serviceProvider
-                        .CreateCentralPackageManagementFile(fileProjects, Path, IsDryRun)
-                        .ConfigureAwait(false);
-
-                    if (result == ErrorCodes.Ok)
-                    {
-                        result = await _fileSystem
-                            .SortReferences(_reporter, projFilesWithNonSortedReferences, IsDryRun)
-                            .ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        result = ErrorCodes.CentralPackageManagementFailed;
-                    }
+                    _command = Commands.Create;
+                }
+                else if (DoRemovePackageVersions)
+                {
+                    _command = Commands.Remove;
                 }
                 else
                 {
-                    result = await _fileSystem
-                        .SortReferences(_reporter, projFilesWithNonSortedReferences, IsDryRun)
-                        .ConfigureAwait(false);
+                    // Default is Sort References
+                    _command = Commands.Sort;
                 }
 
-                _reporter.Output("Done.");
-                return result;
+                return await _processor.Process(_command);
             }
             catch (Exception e)
             {
                 _reporter.Error(e.StackTrace!);
                 return ErrorCodes.CriticalError;
-            }
-        }
-
-        private List<string> LoadFilesFromExtension(IEnumerable<string> extensions)
-        {
-            var projFiles = new List<string>();
-            if (_fileSystem.File.Exists(Path))
-            {
-                projFiles.Add(Path);
-            }
-            else
-            {
-                projFiles = extensions
-                    .SelectMany(ext => _fileSystem
-                        .Directory
-                        .GetFiles(Path, $"*{ext}", SearchOption.AllDirectories))
-                    .ToList();
-            }
-
-            return projFiles;
-        }
-
-        private void PrintInspectionResults(
-            ICollection<string> projFiles,
-            ICollection<string> projFilesWithNonSortedReferences)
-        {
-            var max = projFiles
-                .Max(x => x.Length);
-
-            foreach (var proj in projFiles)
-            {
-                var paddedProjectFile = proj
-                    .PadRight(max);
-
-                if (projFilesWithNonSortedReferences.Contains(proj))
-                {
-                    _reporter.Error($"» {paddedProjectFile} - X");
-                }
-                else
-                {
-                    _reporter.Ok($"» {paddedProjectFile} - Ok");
-                }
             }
         }
     }

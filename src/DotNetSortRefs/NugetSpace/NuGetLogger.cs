@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using DotnetSortAndSyncRefs.Common;
 using NuGet.Common;
 using NuGet.Protocol;
 
-namespace DotnetSortAndSyncRefs.Common
+namespace DotnetSortAndSyncRefs.NugetSpace
 {
     internal class NuGetLogger : ILogger
     {

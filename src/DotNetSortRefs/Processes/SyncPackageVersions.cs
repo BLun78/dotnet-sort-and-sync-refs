@@ -1,24 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Abstractions;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using System.Xml.XPath;
 using DotnetSortAndSyncRefs.Common;
+using DotnetSortAndSyncRefs.Extensions;
+using DotnetSortAndSyncRefs.Xml;
 using Microsoft.Extensions.DependencyInjection;
-using NuGet.Packaging;
 
-namespace DotnetSortAndSyncRefs.Xml
+namespace DotnetSortAndSyncRefs.Processes
 {
-    internal static class SyncPackageVersions
+    internal class SyncPackageVersions : DryRun
     {
-        public static async Task<int> RemovePackageVersions(
-            this IServiceProvider serviceProvider,
+        private readonly IServiceProvider _serviceProvider;
+        
+        public SyncPackageVersions(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
+
+        public async Task<int> RemovePackageVersions(
             IEnumerable<string> projFiles,
-            IEnumerable<string> propsFiles,
-            bool dryRun)
+            IEnumerable<string> propsFiles)
         {
             var result = ErrorCodes.SortingIsFailed;
 
@@ -26,20 +29,20 @@ namespace DotnetSortAndSyncRefs.Xml
             var elementsOfProjectFiles = new List<XElement>();
             foreach (var projFile in projFiles)
             {
-                var xmlProjectFile = serviceProvider.GetRequiredService<XmlProjectFile>();
+                var xmlProjectFile = _serviceProvider.GetRequiredService<XmlProjectFile>();
                 elementsOfProjectFiles.AddRange(xmlProjectFile.ItemGroups);
             }
             var referenceElementsOfProjectFiles = elementsOfProjectFiles.GetReferenceElements();
 
             var lookup = referenceElementsOfProjectFiles.ToLookup(x => x.FirstAttribute?.Value, element => element);
             var removeList = new List<XElement>();
+
             foreach (var propsFile in propsFiles)
             {
-
                 removeList.Clear();
 
-                var xmlCentralPackageManagementFile = serviceProvider.GetRequiredService<XmlCentralPackageManagementFile>();
-                await xmlCentralPackageManagementFile.LoadFileAsync(propsFile, dryRun).ConfigureAwait(false);
+                var xmlCentralPackageManagementFile = _serviceProvider.GetRequiredService<XmlCentralPackageManagementFile>();
+                await xmlCentralPackageManagementFile.LoadFileAsync(propsFile, IsDryRun).ConfigureAwait(false);
 
                 var attributesOfPropsFiles = xmlCentralPackageManagementFile.ItemGroups.ToList().GetReferenceElements();
 
@@ -64,7 +67,7 @@ namespace DotnetSortAndSyncRefs.Xml
                 }
 
                 // write file
-                if (!dryRun)
+                if (IsNoDryRun)
                 {
                     await xmlCentralPackageManagementFile.SaveAsync();
                 }

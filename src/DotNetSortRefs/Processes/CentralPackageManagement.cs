@@ -1,31 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Abstractions;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DotnetSortAndSyncRefs.Common;
+using DotnetSortAndSyncRefs.Extensions;
+using DotnetSortAndSyncRefs.Xml;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DotnetSortAndSyncRefs.Xml
+namespace DotnetSortAndSyncRefs.Processes
 {
-    internal static class CentralPackageManagement
+    internal class CentralPackageManagement : DryRun
     {
-        public static async Task<int> CreateCentralPackageManagementFile(
-            this IServiceProvider serviceProvider,
-            List<string> fileProjects,
-            string path,
-            bool dryRun)
+        private readonly IServiceProvider _serviceProvider;
+
+        public string FilePath { get; set; }
+        
+        public CentralPackageManagement(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
+
+        public async Task<int> CreateCentralPackageManagementFile(
+            List<string> fileProjects)
         {
             var result = ErrorCodes.CreateCentralPackageManagementFailed;
             var error = false;
-            var fileSystem = serviceProvider.GetRequiredService<IFileSystem>();
-            var reporter = serviceProvider.GetRequiredService<Reporter>();
-            var centralPackageManagementFile = serviceProvider.GetRequiredService<XmlCentralPackageManagementFile>();
+            var reporter = _serviceProvider.GetRequiredService<Reporter>();
+            var centralPackageManagementFile = _serviceProvider.GetRequiredService<XmlCentralPackageManagementFile>();
 
-            centralPackageManagementFile.CreateCentralPackageManagementFile(path, dryRun);
+            centralPackageManagementFile.CreateCentralPackageManagementFile(Program.Path, IsDryRun);
             var itemGroup = centralPackageManagementFile.Document.XPathSelectElements($"//ItemGroup").First();
 
             var dict = new Dictionary<string, XElement>
@@ -39,8 +44,8 @@ namespace DotnetSortAndSyncRefs.Xml
                 try
                 {
                     result = ErrorCodes.CreateCentralPackageManagementFailed;
-                    var xmlProjectFile = serviceProvider.GetRequiredService<XmlProjectFile>();
-                    await xmlProjectFile.LoadFileAsync(projFile, dryRun).ConfigureAwait(false);
+                    var xmlProjectFile = _serviceProvider.GetRequiredService<XmlProjectFile>();
+                    await xmlProjectFile.LoadFileAsync(projFile, IsDryRun).ConfigureAwait(false);
 
                     // search for ItemGroup with ProjectElementTypes and for ItemGroup with ProjectElementTypes|Condition
                     var itemGroups = xmlProjectFile.Document
@@ -53,7 +58,7 @@ namespace DotnetSortAndSyncRefs.Xml
                     var referenceElementsOfProjectFiles = elementsOfProjectFiles.GetReferenceElements();
                     foreach (var element in referenceElementsOfProjectFiles)
                     {
-                        var condition = element.Parent.GetCondition() ?? ConstConfig.WithOutCondition;
+                        var condition = GetCondition(element.Parent) ?? ConstConfig.WithOutCondition;
 
                         if (dict.TryGetValue(condition, out var value))
                         {
@@ -62,12 +67,12 @@ namespace DotnetSortAndSyncRefs.Xml
                                 Name = ConstConfig.CentralPackageManagementElementTypes
                             };
                             value.Add(newElement);
-                            element.RemoveVersion();
+                            RemoveVersion(element);
                         }
                     }
 
                     // write file
-                    if (!dryRun)
+                    if (IsNoDryRun)
                     {
                         await xmlProjectFile
                             .SaveAsync()
@@ -92,33 +97,33 @@ namespace DotnetSortAndSyncRefs.Xml
             }
 
             // write file
-            if (!dryRun)
+            if (IsNoDryRun)
             {
                 await centralPackageManagementFile
                     .SaveAsync()
                     .ConfigureAwait(false);
             }
             reporter.Ok($"» Created {centralPackageManagementFile.FilePath}");
-
+            FilePath = centralPackageManagementFile.FilePath;
             return result;
         }
 
-        private static void CreateItemGroups(IEnumerable<XElement> itemGroups, XElement itemGroup, Dictionary<string, XElement> dict)
+        private void CreateItemGroups(IEnumerable<XElement> itemGroups, XElement itemGroup, Dictionary<string, XElement> dict)
         {
             foreach (var element in itemGroups)
             {
-                var newItemGroup = element.CreateItemGroup(itemGroup);
+                var newItemGroup = CreateItemGroup(element, itemGroup);
                 if (newItemGroup != null)
                 {
                     itemGroup.AddAfterSelf(newItemGroup);
-                    dict.Add(newItemGroup.GetCondition(), newItemGroup);
+                    dict.Add(GetCondition(newItemGroup), newItemGroup);
                 }
             }
         }
 
-        private static XElement? CreateItemGroup(this XElement inputElement, XElement nodeBeFor)
+        private XElement CreateItemGroup(XElement inputElement, XElement nodeBeFor)
         {
-            var condition = inputElement.GetCondition();
+            var condition = GetCondition(inputElement);
 
             if (!string.IsNullOrWhiteSpace(condition))
             {
@@ -131,7 +136,7 @@ namespace DotnetSortAndSyncRefs.Xml
             return null;
         }
 
-        public static string GetCondition(this XElement element)
+        public string GetCondition(XElement element)
         {
             var condition = element.FirstAttribute;
             if (condition != null &&
@@ -142,7 +147,7 @@ namespace DotnetSortAndSyncRefs.Xml
             return null;
         }
 
-        private static void RemoveVersion(this XElement element)
+        private void RemoveVersion(XElement element)
         {
             var attribute = element.Attribute(ConstConfig.Version);
             attribute?.Remove();

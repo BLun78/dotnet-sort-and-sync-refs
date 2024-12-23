@@ -9,6 +9,7 @@ namespace DotnetSortAndSyncRefs.Common
 {
     internal static class ErrorCodes
     {
+        public static int None = -10;
         public static int CentralPackageManagementCriticalError = -5;
         public static int ApplicationCriticalError = -4;
         public static int CriticalError = -3;
