@@ -11,14 +11,15 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace DotnetSortAndSyncRefs.Xml
 {
-    internal static class CreatePackageVersion
+    internal static class CentralPackageManagement
     {
-        public static async Task<int> CreatePackageVersions(this IServiceProvider serviceProvider,
+        public static async Task<int> CreateCentralPackageManagementFile(
+            this IServiceProvider serviceProvider,
             List<string> fileProjects,
             string path,
             bool dryRun)
         {
-            var result = 3;
+            var result = ErrorCodes.CreateCentralPackageManagementFailed;
             var error = false;
             var fileSystem = serviceProvider.GetRequiredService<IFileSystem>();
             var reporter = serviceProvider.GetRequiredService<Reporter>();
@@ -37,7 +38,7 @@ namespace DotnetSortAndSyncRefs.Xml
             {
                 try
                 {
-                    result = 3;
+                    result = ErrorCodes.CreateCentralPackageManagementFailed;
                     var xmlProjectFile = serviceProvider.GetRequiredService<XmlProjectFile>();
                     await xmlProjectFile.LoadFileAsync(projFile, dryRun).ConfigureAwait(false);
 
@@ -73,7 +74,7 @@ namespace DotnetSortAndSyncRefs.Xml
                             .ConfigureAwait(false);
                     }
                     reporter.Ok($"» Updated {projFile}");
-                    result = 0;
+                    result = ErrorCodes.Ok;
                 }
                 catch (Exception e)
                 {
@@ -87,7 +88,7 @@ namespace DotnetSortAndSyncRefs.Xml
 
             if (error)
             {
-                return -5;
+                return ErrorCodes.CentralPackageManagementCriticalError;
             }
 
             // write file

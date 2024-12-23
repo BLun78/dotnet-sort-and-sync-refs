@@ -104,7 +104,7 @@ namespace DotnetSortAndSyncRefs.Xml
                     }
 
                     reporter.Ok($"» {projFile}");
-                    result = 0;
+                    result = ErrorCodes.Ok;
                 }
                 catch (Exception e)
                 {

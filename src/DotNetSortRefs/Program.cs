@@ -32,6 +32,7 @@ namespace DotnetSortAndSyncRefs
                 .AddSingleton<IFileSystem, FileSystem>()
                 .AddSingleton<SourceCacheContext>()
                 .AddSingleton<NuGetRepository>()
+                .AddSingleton<Processor>()
                 .AddSingleton<SourceRepository>(provider => Repository.Factory.GetCoreV3("https://api.nuget.org/v3/index.json"))
                 .AddSingleton<ILogger, NuGetLogger>()
                 .AddTransient<XmlAllElementFile>()
@@ -58,7 +59,7 @@ namespace DotnetSortAndSyncRefs
             catch (UnrecognizedCommandParsingException)
             {
                 app.ShowHelp();
-                return 1;
+                return ErrorCodes.ApplicationCriticalError;
             }
         }
 
@@ -104,6 +105,7 @@ namespace DotnetSortAndSyncRefs
             ?.Value
             , "yyyyMMddHHmmss", new DateTimeFormatInfo(), DateTimeStyles.AdjustToUniversal).ToString();
 
+        private readonly Processor _processor;
         private readonly IFileSystem _fileSystem;
         private readonly Reporter _reporter;
         private readonly IConsole _console;
@@ -111,12 +113,14 @@ namespace DotnetSortAndSyncRefs
         private readonly NuGetRepository _nuGetUpdateVersion;
 
         public Program(
+            Processor processor,
             IFileSystem fileSystem,
             Reporter reporter,
             IConsole console,
             IServiceProvider serviceProvider,
             NuGetRepository nuGetUpdateVersion)
         {
+            _processor = processor;
             _fileSystem = fileSystem;
             _reporter = reporter;
             _console = console;
@@ -137,7 +141,7 @@ namespace DotnetSortAndSyncRefs
                       _fileSystem.Directory.Exists(Path)))
                 {
                     _reporter.Error("Directory or file does not exist.");
-                    return 1;
+                    return ErrorCodes.DirectoryDoNotExists;
                 }
 
                 var result = -10;
@@ -157,7 +161,7 @@ namespace DotnetSortAndSyncRefs
                 if (allFiles.Count == 0)
                 {
                     _reporter.Error($"no '{string.Join(", ", allExtensions)}'' files found.");
-                    return 2;
+                    return ErrorCodes.FileDoNotExists;
                 }
 
                 _reporter.Output("Running analysis ...");
@@ -168,7 +172,7 @@ namespace DotnetSortAndSyncRefs
                 if (projFilesWithNonSortedReferences == null)
                 {
                     _reporter.Do("Please solve the issue of the Project file(s).");
-                    return 4;
+                    return ErrorCodes.ProjectFileHasNotAValidXmlFormat;
                 }
 
                 if (IsInspect)
@@ -185,7 +189,7 @@ namespace DotnetSortAndSyncRefs
                     result = await _serviceProvider
                         .RemovePackageVersions(fileProjects, fileProps, IsDryRun)
                         .ConfigureAwait(false);
-                    if (result == 0)
+                    if (result == ErrorCodes.Ok)
                     {
                         result = await _fileSystem
                             .SortReferences(_reporter, projFilesWithNonSortedReferences, IsDryRun)
@@ -193,17 +197,17 @@ namespace DotnetSortAndSyncRefs
                     }
                     else
                     {
-                        result = -1;
+                        result = ErrorCodes.RemoveFailed;
                     }
                 }
                 else if (DoCreatePackageVersions)
                 {
                     _reporter.Output("Running create a Central Package Management file ( \"Directory.Packages.props\") ...");
                     result = await _serviceProvider
-                        .CreatePackageVersions(fileProjects, Path, IsDryRun)
+                        .CreateCentralPackageManagementFile(fileProjects, Path, IsDryRun)
                         .ConfigureAwait(false);
 
-                    if (result == 0)
+                    if (result == ErrorCodes.Ok)
                     {
                         result = await _fileSystem
                             .SortReferences(_reporter, projFilesWithNonSortedReferences, IsDryRun)
@@ -211,7 +215,7 @@ namespace DotnetSortAndSyncRefs
                     }
                     else
                     {
-                        result = -2;
+                        result = ErrorCodes.CentralPackageManagementFailed;
                     }
                 }
                 else
@@ -227,7 +231,7 @@ namespace DotnetSortAndSyncRefs
             catch (Exception e)
             {
                 _reporter.Error(e.StackTrace!);
-                return -3;
+                return ErrorCodes.CriticalError;
             }
         }
 

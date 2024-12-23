@@ -20,7 +20,7 @@ namespace DotnetSortAndSyncRefs.Xml
             IEnumerable<string> propsFiles,
             bool dryRun)
         {
-            var result = 4;
+            var result = ErrorCodes.SortingIsFailed;
 
             // collect Project references
             var elementsOfProjectFiles = new List<XElement>();
@@ -69,7 +69,7 @@ namespace DotnetSortAndSyncRefs.Xml
                     await xmlCentralPackageManagementFile.SaveAsync();
                 }
 
-                result = 0;
+                result = ErrorCodes.Ok;
             }
 
             return result;
