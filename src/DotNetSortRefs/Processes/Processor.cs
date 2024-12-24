@@ -88,7 +88,7 @@ namespace DotnetSortAndSyncRefs.Processes
                         ? 0
                         : 1;
                     break;
-                case Commands.Remove:
+                case Commands.CLean:
                     _reporter.Output("Running remove not needed PackageVersion ...");
                     result = await _syncPackageVersions
                         .RemovePackageVersions(fileProjects, fileProps)

@@ -152,7 +152,7 @@ namespace DotnetSortAndSyncRefs
                 }
                 else if (DoCleanUpPackageVersions)
                 {
-                    _command = Commands.Remove;
+                    _command = Commands.CLean;
                 }
                 else
                 {

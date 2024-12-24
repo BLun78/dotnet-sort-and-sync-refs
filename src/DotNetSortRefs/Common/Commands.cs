@@ -10,7 +10,7 @@ namespace DotnetSortAndSyncRefs.Common
     {
         None = 0,
         Inspect,
-        Remove,
+        CLean,
         Create,
         Sort,
 
