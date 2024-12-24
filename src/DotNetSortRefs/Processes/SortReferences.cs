@@ -11,24 +11,27 @@ using System.Xml.XPath;
 using System.Reflection;
 using System.Xml.Xsl;
 using System.Xml;
+using DotnetSortAndSyncRefs.Xml;
+using Microsoft.Extensions.DependencyInjection;
+using System.Threading;
 
 namespace DotnetSortAndSyncRefs.Processes
 {
     internal class SortReferences : DryRun
     {
+        private readonly IServiceProvider _serviceProvider;
         private readonly Reporter _reporter;
-        private readonly IFileSystem _fileSystem;
 
         public SortReferences(
-            Reporter reporter,
-            IFileSystem fileSystem
+            IServiceProvider serviceProvider,
+            Reporter reporter
             )
         {
+            _serviceProvider = serviceProvider;
             _reporter = reporter;
-            _fileSystem = fileSystem;
         }
 
-        public async Task<int> SortIt(IEnumerable<string> projFiles)
+        public async Task<int> SortIt(IEnumerable<string> projFiles, CancellationToken cancellationToken = default)
         {
             _reporter.Output("Running sort package references ...");
             var result = 5;
@@ -39,14 +42,19 @@ namespace DotnetSortAndSyncRefs.Processes
                 try
                 {
                     await using var sw = new StringWriter();
-                    var xml = await _fileSystem.File.ReadAllTextAsync(projFile).ConfigureAwait(false);
-                    var doc = XDocument.Parse(xml);
-                    xslt.Transform(doc.CreateNavigator(), null, sw);
+                    var xmlAllElementFile = _serviceProvider.GetRequiredService<XmlAllElementFile>();
+                    await xmlAllElementFile
+                        .LoadFileAsync(projFile, IsDryRun, cancellationToken)
+                        .ConfigureAwait(false);
+                    
+                    xslt.Transform(xmlAllElementFile.Document.CreateNavigator(), null, sw);
 
                     // write file
                     if (IsNoDryRun)
                     {
-                        await _fileSystem.File.WriteAllTextAsync(projFile, sw.ToString()).ConfigureAwait(false);
+                        await xmlAllElementFile
+                            .SaveAsync(sw, cancellationToken)
+                            .ConfigureAwait(false);
                     }
 
                     _reporter.Ok($"» {projFile}");
@@ -62,7 +70,7 @@ namespace DotnetSortAndSyncRefs.Processes
             return result;
         }
 
-        public static XslCompiledTransform GetXslTransform()
+        private static XslCompiledTransform GetXslTransform()
         {
             var assembly = Assembly.GetExecutingAssembly();
             using var stream = assembly.GetManifestResourceStream($"{nameof(DotnetSortAndSyncRefs)}.Sort.xsl");

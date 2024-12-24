@@ -22,7 +22,7 @@
   </ItemGroup>
   <ItemGroup Condition=" '$(Configuration)' == 'Debug' ">
     <Content Include="TestContent\Directory.Packages.props">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
     <Content Include="TestContent\Test.csproj">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

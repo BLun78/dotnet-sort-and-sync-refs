@@ -33,7 +33,7 @@ internal abstract class XmlBaseFile
 
     public IEnumerable<XElement> ItemGroups => Document?.XPathSelectElements($"//ItemGroup[{GetItemGroupElements()}]");
 
-    public async Task<int> LoadFileAsync(string filePath, bool isDryRun)
+    public async Task<int> LoadFileAsync(string filePath, bool isDryRun, CancellationToken cancellationToken = default)
     {
         FilePath = filePath;
         BackupFilePath = $"{filePath}.backup";
@@ -43,7 +43,7 @@ internal abstract class XmlBaseFile
         {
             var xmlFile = await FileSystem
                 .File
-                .ReadAllTextAsync(FilePath)
+                .ReadAllTextAsync(FilePath, cancellationToken)
                 .ConfigureAwait(false);
             Document = XDocument.Parse(xmlFile);
 
@@ -57,7 +57,7 @@ internal abstract class XmlBaseFile
         return 0;
     }
 
-    public async Task<int> LoadFileReadOnlyAsync(string filePath)
+    public async Task<int> LoadFileReadOnlyAsync(string filePath, CancellationToken cancellationToken = default)
     {
         FilePath = filePath;
         BackupFilePath = $"{filePath}.backup";
@@ -67,7 +67,7 @@ internal abstract class XmlBaseFile
         {
             var xmlFile = await FileSystem
                 .File
-                .ReadAllTextAsync(FilePath)
+                .ReadAllTextAsync(FilePath, cancellationToken)
                 .ConfigureAwait(false);
             Document = XDocument.Parse(xmlFile);
         }
@@ -75,15 +75,34 @@ internal abstract class XmlBaseFile
         return 0;
     }
 
-    public async Task SaveAsync()
+    public async Task SaveAsync(CancellationToken cancellationToken = default)
     {
         if (Document != null && IsNoDryRun)
         {
-            await using Stream sw = new FileStream(FilePath, FileMode);
-            await sw.FlushAsync().ConfigureAwait(false);
-            await Document.SaveAsync(sw, SaveOptions.None, CancellationToken.None);
+            await using Stream fileStream = new FileStream(FilePath, FileMode);
+
+            await fileStream
+                .FlushAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            await Document
+                .SaveAsync(fileStream, SaveOptions.DisableFormatting, cancellationToken)
+                .ConfigureAwait(false);
 
         }
+    }
+
+    public async Task SaveAsync(StringWriter stringWriter, CancellationToken cancellationToken = default)
+    {
+        await stringWriter
+            .FlushAsync()
+            .ConfigureAwait(false);
+
+        await FileSystem
+            .File
+            .WriteAllTextAsync(FilePath, stringWriter.ToString(), cancellationToken)
+            .ConfigureAwait(false);
+
     }
 
     protected abstract string GetItemGroupElements();
