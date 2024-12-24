@@ -88,8 +88,8 @@ namespace DotnetSortAndSyncRefs
         public bool IsInspect { get; set; } = false;
 
         [Option(CommandOptionType.NoValue, Description = "Specifies whether to remove not needed PackageVersion to protect the application for old version usage.",
-            ShortName = "r", LongName = "remove")]
-        public bool DoRemovePackageVersions { get; set; } = false;
+            ShortName = "cl", LongName = "clean")]
+        public bool DoCleanUpPackageVersions { get; set; } = false;
 
         [Option(CommandOptionType.NoValue, Description = "Specifies whether to enable Central Package Management and create a file called \"Directory.Packages.props\".",
             ShortName = "c", LongName = "create")]
@@ -150,7 +150,7 @@ namespace DotnetSortAndSyncRefs
                 {
                     _command = Commands.Create;
                 }
-                else if (DoRemovePackageVersions)
+                else if (DoCleanUpPackageVersions)
                 {
                     _command = Commands.Remove;
                 }

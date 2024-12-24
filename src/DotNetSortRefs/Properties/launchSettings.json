@@ -12,9 +12,9 @@
       "commandName": "Project",
       "commandLineArgs": "-i"
     },
-    "DotNetSortRefs - Remove": {
+    "DotNetSortRefs - Clean": {
       "commandName": "Project",
-      "commandLineArgs": "-r"
+      "commandLineArgs": "-cl"
     },
     "DotNetSortRefs - Sort": {
       "commandName": "Project",
