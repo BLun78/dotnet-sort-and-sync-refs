@@ -5,6 +5,7 @@ using System.IO.Abstractions;
 using System.Linq;
 using System.Threading.Tasks;
 using DotnetSortAndSyncRefs.Common;
+using DotnetSortAndSyncRefs.NugetSpace;
 
 namespace DotnetSortAndSyncRefs.Processes
 {
@@ -15,6 +16,7 @@ namespace DotnetSortAndSyncRefs.Processes
         private readonly SyncPackageVersions _syncPackageVersions;
         private readonly SortReferences _sortReferences;
         private readonly Reporter _reporter;
+        private readonly NuGetRepository _nuGetRepository;
         private readonly IFileSystem _fileSystem;
 
         public Processor(
@@ -23,6 +25,7 @@ namespace DotnetSortAndSyncRefs.Processes
             SyncPackageVersions syncPackageVersions,
             SortReferences sortReferences,
             Reporter reporter,
+            NuGetRepository nuGetRepository,
             IFileSystem fileSystem)
         {
             _inspector = inspector;
@@ -30,6 +33,7 @@ namespace DotnetSortAndSyncRefs.Processes
             _syncPackageVersions = syncPackageVersions;
             _sortReferences = sortReferences;
             _reporter = reporter;
+            _nuGetRepository = nuGetRepository;
             _fileSystem = fileSystem;
         }
 
@@ -45,6 +49,8 @@ namespace DotnetSortAndSyncRefs.Processes
 
         public async Task<int> Process(Commands command)
         {
+            var meta = await _nuGetRepository.GetMetadataAsync("Microsoft.Extensions.DependencyInjection");
+
             var result = ErrorCodes.None;
             var allExtensions = new List<string>();
             allExtensions.AddRange(ProjectFilePostfix);

@@ -6,6 +6,7 @@ using System.Xml.Linq;
 using System.Xml.XPath;
 using DotnetSortAndSyncRefs.Common;
 using DotnetSortAndSyncRefs.Extensions;
+using DotnetSortAndSyncRefs.Models;
 using DotnetSortAndSyncRefs.Xml;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -53,11 +54,13 @@ namespace DotnetSortAndSyncRefs.Processes
                         .ToList();
                     CreateItemGroups(itemGroups, itemGroup, dict);
 
+                   
                     elementsOfProjectFiles.AddRange(itemGroups);
 
                     var referenceElementsOfProjectFiles = elementsOfProjectFiles.GetReferenceElements();
                     foreach (var element in referenceElementsOfProjectFiles)
                     {
+                        var test = new ItemGroup(element.Parent);
                         var condition = GetCondition(element.Parent) ?? ConstConfig.WithOutCondition;
 
                         if (dict.TryGetValue(condition, out var value))

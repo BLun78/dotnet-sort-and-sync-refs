@@ -29,7 +29,8 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="System.IO.Abstractions" Version="21.1.7" />
+    <PackageReference Include="System.IO.Abstractions" Version="21.1.7">
+    </PackageReference>
     <PackageReference Include="Blabla" Version="1.1.1" />
   </ItemGroup>
   <ItemGroup>

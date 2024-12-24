@@ -30,6 +30,7 @@ namespace DotnetSortAndSyncRefs.Processes
             foreach (var projFile in projFiles)
             {
                 var xmlProjectFile = _serviceProvider.GetRequiredService<XmlProjectFile>();
+                await xmlProjectFile.LoadFileAsync(projFile, IsDryRun);
                 elementsOfProjectFiles.AddRange(xmlProjectFile.ItemGroups);
             }
             var referenceElementsOfProjectFiles = elementsOfProjectFiles.GetReferenceElements();

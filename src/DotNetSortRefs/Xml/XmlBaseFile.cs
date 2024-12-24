@@ -14,6 +14,7 @@ internal abstract class XmlBaseFile
     protected readonly IFileSystem FileSystem;
     protected readonly Reporter Reporter;
     protected bool IsNoDryRun;
+    protected bool DoBackup;
 
     protected XmlBaseFile(
         IFileSystem fileSystem,
@@ -33,11 +34,17 @@ internal abstract class XmlBaseFile
 
     public IEnumerable<XElement> ItemGroups => Document?.XPathSelectElements($"//ItemGroup[{GetItemGroupElements()}]");
 
-    public async Task<int> LoadFileAsync(string filePath, bool isDryRun, CancellationToken cancellationToken = default)
+    public Task<int> LoadFileAsync(string filePath, bool isDryRun, CancellationToken cancellationToken = default)
+    {
+        return LoadFileAsync(filePath, isDryRun, true, cancellationToken);
+    }
+
+    public async Task<int> LoadFileAsync(string filePath, bool isDryRun, bool doBackup, CancellationToken cancellationToken = default)
     {
         FilePath = filePath;
         BackupFilePath = $"{filePath}.backup";
         IsNoDryRun = !isDryRun;
+        DoBackup = doBackup;
 
         if (FileSystem.File.Exists(FilePath))
         {
@@ -47,10 +54,13 @@ internal abstract class XmlBaseFile
                 .ConfigureAwait(false);
             Document = XDocument.Parse(xmlFile);
 
-            Reporter.Do($"» Backup {FilePath} to {BackupFilePath}");
-            if (IsNoDryRun)
+            if (DoBackup)
             {
-                FileSystem.File.Copy(FilePath, BackupFilePath, true);
+                Reporter.Do($"» Backup {FilePath} to {BackupFilePath}");
+                if (IsNoDryRun)
+                {
+                    FileSystem.File.Copy(FilePath, BackupFilePath, true);
+                }
             }
         }
 
@@ -62,6 +72,7 @@ internal abstract class XmlBaseFile
         FilePath = filePath;
         BackupFilePath = $"{filePath}.backup";
         IsNoDryRun = false;
+        DoBackup = false;
 
         if (FileSystem.File.Exists(FilePath))
         {

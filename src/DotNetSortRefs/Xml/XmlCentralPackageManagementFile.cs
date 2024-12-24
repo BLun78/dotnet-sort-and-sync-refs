@@ -35,10 +35,13 @@ internal class XmlCentralPackageManagementFile : XmlBaseFile
 
         if (FileSystem.File.Exists(FilePath))
         {
-            Reporter.Do($"» Backup {FilePath} to {BackupFilePath}");
-            if (IsNoDryRun)
+            if (DoBackup)
             {
-                FileSystem.File.Copy(FilePath, BackupFilePath, true);
+                Reporter.Do($"» Backup {FilePath} to {BackupFilePath}");
+                if (IsNoDryRun)
+                {
+                    FileSystem.File.Copy(FilePath, BackupFilePath, true);
+                }
             }
             FileMode = FileMode.Truncate;
         }

@@ -45,6 +45,7 @@ namespace DotnetSortAndSyncRefs
 
                 // Nuget 
                 .AddSingleton<SourceCacheContext>()
+                .AddSingleton<NuGetRepository>()
                 .AddSingleton<SourceRepository>(provider => Repository.Factory.GetCoreV3("https://api.nuget.org/v3/index.json"))
                 .AddSingleton<ILogger, NuGetLogger>()
 

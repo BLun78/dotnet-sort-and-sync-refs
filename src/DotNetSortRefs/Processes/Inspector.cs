@@ -25,7 +25,6 @@ namespace DotnetSortAndSyncRefs.Processes
 
             foreach (var projFile in projFiles)
             {
-
                 try
                 {
                     var xmlFile = _serviceProvider.GetRequiredService<XmlAllElementFile>();
@@ -56,6 +55,7 @@ namespace DotnetSortAndSyncRefs.Processes
                         else if (!projFilesWithNonSortedReferences.Contains(projFile))
                         {
                             reporter.Ok($"» {projFile}");
+                            projFilesWithNonSortedReferences.Add(projFile);
                         }
                     }
                 }

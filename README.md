@@ -21,14 +21,19 @@ dotnet tool install --global dotnet-sort-and-sync-refs
 Usage: dotnet sort-and-sync-refs [options] <Path>
 
 Arguments:
-  Path          The path to a .csproj, .vbproj and .fsproj or directory. If a directory is specified, all .csproj, .vbproj and .fsproj files within folder tree will be processed. If none specified, it will use the current directory.
+  Path           The path to a .csproj, .vbproj, .fsproj or directory. If a directory is specified, all .csproj, .vbproj
+                 and .fsproj files within folder tree will be processed. If none specified, it will use the current
+                 directory.
 
 Options:
-  --version     Show version information.
-  -?|-h|--help  Show help information.
-  -i|--inspect  Specifies whether to inspect and return a non-zero exit code if one or more projects have non-sorted package references.
-  -r|--remove   Specifies whether to remove not needed PackageVersion to protect the application for old version usage.
-  -c|--create   Specifies whether to enable Central Package Management and create a file called "Directory.Packages.props".
+  --version      Show version information.
+  -?|-h|--help   Show help information.
+  -i|--inspect   Specifies whether to inspect and return a non-zero exit code if one or more projects have non-sorted
+                 package references.
+  -r|--remove    Specifies whether to remove not needed PackageVersion to protect the application for old version usage.
+  -c|--create    Specifies whether to enable Central Package Management and create a file called
+                 "Directory.Packages.props".
+  -dr|--dry-run  Specifies whether to do a dry run. It shows the effected actions, but do not change the files.
 ```
 
 Note: `dotnet sort-and-sync-refs` and `dotnet-sort-and-sync-refs` are valid usages to run the tool.

@@ -44,9 +44,9 @@ namespace DotnetSortAndSyncRefs.Processes
                     await using var sw = new StringWriter();
                     var xmlAllElementFile = _serviceProvider.GetRequiredService<XmlAllElementFile>();
                     await xmlAllElementFile
-                        .LoadFileAsync(projFile, IsDryRun, cancellationToken)
+                        .LoadFileAsync(projFile, IsDryRun, false, cancellationToken)
                         .ConfigureAwait(false);
-                    
+
                     xslt.Transform(xmlAllElementFile.Document.CreateNavigator(), null, sw);
 
                     // write file
