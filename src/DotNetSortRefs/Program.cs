@@ -44,6 +44,7 @@ namespace DotnetSortAndSyncRefs
                 .AddSingleton<Inspector>()
 
                 // Nuget 
+                .AddSingleton<NuGetUpdate>()
                 .AddSingleton<SourceCacheContext>()
                 .AddSingleton<NuGetRepository>()
                 .AddSingleton<SourceRepository>(provider => Repository.Factory.GetCoreV3("https://api.nuget.org/v3/index.json"))
@@ -99,16 +100,24 @@ namespace DotnetSortAndSyncRefs
             ShortName = "dr", LongName = "dry-run")]
         public bool IsDryRun { get; set; } = false;
 
+        [Option(CommandOptionType.NoValue, Description = "Specifies whether to do a nuget update.",
+            ShortName = "ud", LongName = "update")]
+        public bool DoNugetUpdate { get; set; } = false;
+
+        [Option(CommandOptionType.SingleValue, Description = "Specifies whether to do a dotnet update. e. g.  net481, net9.0",
+            ShortName = "ug", LongName = "upgrade")]
+        public string DoDotnetUpgrade { get; set; } = null;
+
         private static string GetVersion() => $"{typeof(Program)
             .Assembly
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-            ?.InformationalVersion} - {GetBuildDate} UTC";
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion ?? string.Empty} - {GetBuildDate} UTC";
 
         private static string GetBuildDate => DateTime.ParseExact(typeof(Program)
             .Assembly
-            .GetCustomAttribute<AssemblyMetadataAttribute>()
-            ?.Value
-            , "yyyyMMddHHmmss", new DateTimeFormatInfo(), DateTimeStyles.AdjustToUniversal).ToString();
+            .GetCustomAttribute<AssemblyMetadataAttribute>()?
+            .Value ?? string.Empty
+            , "yyyyMMddHHmmss", new DateTimeFormatInfo(), DateTimeStyles.AdjustToUniversal).ToString(CultureInfo.InvariantCulture);
 
         private readonly Processor _processor;
         private readonly IFileSystem _fileSystem;
@@ -153,6 +162,14 @@ namespace DotnetSortAndSyncRefs
                 else if (DoCleanUpPackageVersions)
                 {
                     _command = Commands.CLean;
+                }
+                else if (DoNugetUpdate)
+                {
+                    _command = Commands.Update;
+                }
+                else if (!string.IsNullOrWhiteSpace(DoDotnetUpgrade))
+                {
+                    _command = Commands.Upgrade;
                 }
                 else
                 {

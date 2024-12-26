@@ -17,6 +17,7 @@ namespace DotnetSortAndSyncRefs.Processes
         private readonly SortReferences _sortReferences;
         private readonly Reporter _reporter;
         private readonly NuGetRepository _nuGetRepository;
+        private readonly NuGetUpdate _updateNuGets;
         private readonly IFileSystem _fileSystem;
 
         public Processor(
@@ -26,7 +27,8 @@ namespace DotnetSortAndSyncRefs.Processes
             SortReferences sortReferences,
             Reporter reporter,
             NuGetRepository nuGetRepository,
-            IFileSystem fileSystem)
+            NuGetUpdate updateNuGets,
+            IFileSystem fileSystem) 
         {
             _inspector = inspector;
             _centralPackageManagement = centralPackageManagement;
@@ -34,6 +36,7 @@ namespace DotnetSortAndSyncRefs.Processes
             _sortReferences = sortReferences;
             _reporter = reporter;
             _nuGetRepository = nuGetRepository;
+            _updateNuGets = updateNuGets;
             _fileSystem = fileSystem;
         }
 
@@ -128,6 +131,12 @@ namespace DotnetSortAndSyncRefs.Processes
                 case Commands.Sort:
                     result = await _sortReferences
                         .SortIt(projFilesWithNonSortedReferences)
+                        .ConfigureAwait(false);
+                    break;
+                case Commands.Update:
+                    _reporter.Output("Running update NuGet packages ...");
+                    result = await _updateNuGets
+                        .UpdateNuGets(fileProjects, fileProps)
                         .ConfigureAwait(false);
                     break;
                 case Commands.None:

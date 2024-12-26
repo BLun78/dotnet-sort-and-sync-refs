@@ -13,6 +13,7 @@ namespace DotnetSortAndSyncRefs.Common
         CLean,
         Create,
         Sort,
-
+        Update,
+        Upgrade
     }
 }

@@ -21,5 +21,6 @@ namespace DotnetSortAndSyncRefs.Common
         public static int CreateCentralPackageManagementFailed = 3;
         public static int ProjectFileHasNotAValidXmlFormat = 4;
         public static int SortingIsFailed = 5;
+        public static int NuGetUpdateIsFailed = 6;
     }
 }
