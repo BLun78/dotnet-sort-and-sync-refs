@@ -8,10 +8,12 @@ using McMaster.Extensions.CommandLineUtils;
 
 namespace DotnetSortAndSyncRefs.Commands
 {
-    [Command("nuget-update", "update", "ud", "u", Description = "Updates NuGet packages in all project files.")]
+    [Command("nuget-update", "update", "ud", "u", 
+        Description = "Updates NuGet packages in all project files.")]
     internal class NuGetUpdateCommand : CommandBase, ICommandBase
     {
-        public NuGetUpdateCommand(IServiceProvider serviceProvider) : base(serviceProvider)
+        public NuGetUpdateCommand(IServiceProvider serviceProvider) 
+            : base(serviceProvider, "nuget-update")
         {
         }
 

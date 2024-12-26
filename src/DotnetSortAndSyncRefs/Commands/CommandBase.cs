@@ -34,6 +34,8 @@ namespace DotnetSortAndSyncRefs.Commands
             ".props"
         };
 
+        protected readonly string CentralPackageManagementFile = "Directory.Packages.props";
+
         [Argument(0, Description =
             "The path to a .csproj, .vbproj, .fsproj or directory. If a directory is specified, all .csproj, .vbproj and .fsproj files within folder tree will be processed. If none specified, it will use the current directory.")]
         public string Path { get; set; }
@@ -46,11 +48,13 @@ namespace DotnetSortAndSyncRefs.Commands
 
         public bool IsNoDryRun => !IsDryRun;
 
-        protected CommandBase(IServiceProvider serviceProvider)
+        protected CommandBase(IServiceProvider serviceProvider, string commandStartMessage)
         {
             ServiceProvider = serviceProvider;
             FileSystem = serviceProvider.GetRequiredService<IFileSystem>();
-            Reporter = serviceProvider.GetRequiredService<Reporter>(); ;
+            Reporter = serviceProvider.GetRequiredService<Reporter>();
+
+            Reporter.Output($"start command: {commandStartMessage}");
 
             if (string.IsNullOrEmpty(Path))
             {

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35527.113 d17.12
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotnetSortAndSyncRefs", "src\DotNetSortRefs\DotnetSortAndSyncRefs.csproj", "{18F8C228-6832-4F8F-B629-79A368B23339}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotnetSortAndSyncRefs", "src\DotnetSortAndSyncRefs\DotnetSortAndSyncRefs.csproj", "{18F8C228-6832-4F8F-B629-79A368B23339}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotnetSortAndSyncRefs.Test", "test\DotnetSortAndSyncRefs.Test\DotnetSortAndSyncRefs.Test.csproj", "{EEB9BE9A-9141-48FD-BBD9-25B9A199CD6E}"
 EndProject

@@ -16,7 +16,8 @@ namespace DotnetSortAndSyncRefs.Commands;
 [Command("central-package-management", "cpm", "create", "c", Description = "Creates a central package management file and updates all project files.")]
 internal class CentralPackageManagementCommand : SortReferences, ICommandBase
 {
-    public CentralPackageManagementCommand(IServiceProvider serviceProvider) : base(serviceProvider)
+    public CentralPackageManagementCommand(IServiceProvider serviceProvider)
+        : base(serviceProvider, "central-package-management")
     {
     }
 
@@ -44,11 +45,13 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
                 var xmlProjectFile = ServiceProvider.GetRequiredService<XmlProjectFile>();
                 await xmlProjectFile.LoadFileAsync(projFile, IsDryRun).ConfigureAwait(false);
 
+                xmlProjectFile.FixAndGroupItemGroups();
+
                 // search for ItemGroup with ProjectElementTypes and for ItemGroup with ProjectElementTypes|Condition
                 var itemGroups = xmlProjectFile.Document
                     .XPathSelectElements($"//ItemGroup[{ConstConfig.ProjectElementTypes}] | //ItemGroup[{ConstConfig.Condition} and {ConstConfig.ProjectElementTypes}]")
                     .ToList();
-                CreateItemGroups(itemGroups, itemGroup, dict);
+                xmlProjectFile.CreateItemGroups(itemGroups, itemGroup, dict);
 
 
                 elementsOfProjectFiles.AddRange(itemGroups);
@@ -56,8 +59,7 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
                 var referenceElementsOfProjectFiles = elementsOfProjectFiles.GetReferenceElements();
                 foreach (var element in referenceElementsOfProjectFiles)
                 {
-                    var test = new ItemGroup(element.Parent);
-                    var condition = GetCondition(element.Parent) ?? ConstConfig.WithOutCondition;
+                    var condition = xmlProjectFile.GetCondition(element.Parent) ?? ConstConfig.WithOutCondition;
 
                     if (dict.TryGetValue(condition, out var value))
                     {
@@ -66,7 +68,7 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
                             Name = ConstConfig.CentralPackageManagementElementTypes
                         };
                         value.Add(newElement);
-                        RemoveVersion(element);
+                        xmlProjectFile.RemoveVersion(element);
                     }
                 }
 
@@ -115,51 +117,5 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
         }
 
         return result;
-    }
-
-
-    private void CreateItemGroups(IEnumerable<XElement> itemGroups, XElement itemGroup, Dictionary<string, XElement> dict)
-    {
-        foreach (var element in itemGroups)
-        {
-            var newItemGroup = CreateItemGroup(element, itemGroup);
-            if (newItemGroup != null)
-            {
-                itemGroup.AddAfterSelf(newItemGroup);
-                dict.Add(GetCondition(newItemGroup), newItemGroup);
-            }
-        }
-    }
-
-    private XElement CreateItemGroup(XElement inputElement, XElement nodeBeFor)
-    {
-        var condition = GetCondition(inputElement);
-
-        if (!string.IsNullOrWhiteSpace(condition))
-        {
-            var element = new XElement("ItemGroup");
-
-            element.SetAttributeValue(ConstConfig.Condition, condition);
-
-            return element;
-        }
-        return null;
-    }
-
-    private string GetCondition(XElement element)
-    {
-        var condition = element.FirstAttribute;
-        if (condition != null &&
-            condition.Name == ConstConfig.Condition)
-        {
-            return condition.Value;
-        }
-        return null;
-    }
-
-    private void RemoveVersion(XElement element)
-    {
-        var attribute = element.Attribute(ConstConfig.Version);
-        attribute?.Remove();
     }
 }

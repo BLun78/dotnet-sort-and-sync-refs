@@ -14,5 +14,6 @@
     <PackageVersion Include="LightInject.Attributes" Version="5.0.1" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageVersion Include="LightInject" Version="7.0.1" />
+    <PackageVersion Include="McMaster.Extensions.CommandLineUtils" Version="4.1.1" />
   </ItemGroup>
 </Project>

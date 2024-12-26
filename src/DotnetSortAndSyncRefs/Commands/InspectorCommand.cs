@@ -9,11 +9,12 @@ using System.Threading.Tasks;
 
 namespace DotnetSortAndSyncRefs.Commands
 {
-    [Command("inspect", "i", Description = "Specifies whether to inspect and return a non-zero exit code if one or more projects have non-sorted package references.")]
+    [Command("inspect", "i", 
+        Description = "Specifies whether to inspect and return a non-zero exit code if one or more projects have non-sorted package references.")]
     internal class InspectorCommand : CommandBase, ICommandBase
     {
         public InspectorCommand(IServiceProvider serviceProvider)
-            : base(serviceProvider)
+            : base(serviceProvider, "inspect")
         {
         }
 

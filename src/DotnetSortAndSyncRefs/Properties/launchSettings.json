@@ -10,11 +10,11 @@
     },
     "DotNetSortRefs - Upgrade net9.0": {
       "commandName": "Project",
-      "commandLineArgs": "ug net9.0"
+      "commandLineArgs": "ug .\\ net9.0"
     },
     "DotNetSortRefs - Upgrade net9.0 as Dry-Run": {
       "commandName": "Project",
-      "commandLineArgs": "ug net9.0 -dr"
+      "commandLineArgs": "ug .\\ net9.0 -dr"
     },
     "DotNetSortRefs - Upgrade -h": {
       "commandName": "Project",

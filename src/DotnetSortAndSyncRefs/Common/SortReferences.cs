@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices.JavaScript;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.XPath;
@@ -11,18 +12,19 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace DotnetSortAndSyncRefs.Common;
 
-internal class SortReferences : CommandBase, ICommandBase
+internal abstract class SortReferences : CommandBase, ICommandBase
 {
-    public SortReferences(
-        IServiceProvider serviceProvider
-    ) : base(serviceProvider)
+    protected SortReferences(
+        IServiceProvider serviceProvider, 
+        string commandStartMessage
+    ) : base(serviceProvider, commandStartMessage)
     {
     }
 
     public override async Task<int> OnExecute()
     {
         Reporter.Output("Running sort package references ...");
-        var result = 5;
+        var result = ErrorCodes.SortingIsFailed;
         var xslt = GetXslTransform();
 
         foreach (var projFile in AllFiles)

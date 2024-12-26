@@ -12,10 +12,12 @@ using McMaster.Extensions.CommandLineUtils;
 
 namespace DotnetSortAndSyncRefs.Commands
 {
-    [Command("sync", "sy", Description = "Syncs package references in all project files.")]
+    [Command("sync", "sy",
+        Description = "Syncs package references in all project files.")]
     internal class SyncPackagesCommand : SortReferences, ICommandBase
     {
-        public SyncPackagesCommand(IServiceProvider serviceProvider) : base(serviceProvider)
+        public SyncPackagesCommand(IServiceProvider serviceProvider)
+            : base(serviceProvider, "sync")
         {
         }
 
@@ -32,6 +34,15 @@ namespace DotnetSortAndSyncRefs.Commands
                 await xmlProjectFile
                     .LoadFileAsync(projFile, IsDryRun)
                     .ConfigureAwait(false);
+
+                xmlProjectFile.FixAndGroupItemGroups();
+
+                if (IsNoDryRun)
+                {
+                    await xmlProjectFile
+                        .SaveAsync()
+                        .ConfigureAwait(false);
+                }
 
                 elementsOfProjectFiles.AddRange(xmlProjectFile.ItemGroups);
             }
@@ -56,6 +67,15 @@ namespace DotnetSortAndSyncRefs.Commands
                 await xmlCentralPackageManagementFile
                     .LoadFileAsync(propsFile, IsDryRun)
                     .ConfigureAwait(false);
+
+                xmlCentralPackageManagementFile.FixAndGroupItemGroups();
+
+                if (IsNoDryRun)
+                {
+                    await xmlCentralPackageManagementFile
+                        .SaveAsync()
+                        .ConfigureAwait(false);
+                }
 
                 var attributesOfPropsFiles = xmlCentralPackageManagementFile
                     .ItemGroups
@@ -85,7 +105,9 @@ namespace DotnetSortAndSyncRefs.Commands
                 // write file
                 if (IsNoDryRun)
                 {
-                    await xmlCentralPackageManagementFile.SaveAsync();
+                    await xmlCentralPackageManagementFile
+                        .SaveAsync()
+                        .ConfigureAwait(false);
                 }
 
                 result = ErrorCodes.Ok;
@@ -93,7 +115,9 @@ namespace DotnetSortAndSyncRefs.Commands
 
             if (result == ErrorCodes.Ok)
             {
-                return await base.OnExecute();
+                return await base
+                    .OnExecute()
+                    .ConfigureAwait(false);
             }
 
             return result;

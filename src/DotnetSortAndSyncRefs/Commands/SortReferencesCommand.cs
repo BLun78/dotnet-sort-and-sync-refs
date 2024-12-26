@@ -10,10 +10,12 @@ using DotnetSortAndSyncRefs.Common;
 
 namespace DotnetSortAndSyncRefs.Commands
 {
-    [Command("sort", "s", Description = "Sorts package references in all project files.")]
+    [Command("sort", "s", 
+        Description = "Sorts package references in all project files.")]
     internal class SortReferencesCommand : SortReferences, ICommandBase
     {
-        public SortReferencesCommand(IServiceProvider serviceProvider) : base(serviceProvider)
+        public SortReferencesCommand(IServiceProvider serviceProvider) 
+            : base(serviceProvider, "sort")
         {
         }
     }

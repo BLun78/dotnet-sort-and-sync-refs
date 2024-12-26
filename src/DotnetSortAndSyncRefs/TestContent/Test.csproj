@@ -34,6 +34,11 @@
     <PackageReference Include="Blabla" Version="1.1.1" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="System.IO.Implement" Version="21.1.7">
+    </PackageReference>
+    <PackageReference Include="Hahaha" Version="1.1.1" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="4.1.1" />
     <PackageReference Include="System.IO" Version="7.1.7" />
   </ItemGroup>
@@ -45,8 +50,8 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     <PackageReference Include="Bubu" Version="3.3.3" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+  <!--<ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
     <PackageReference Include="Bibi" Version="4.4.4" />
-  </ItemGroup>
+  </ItemGroup>-->
 </Project>
