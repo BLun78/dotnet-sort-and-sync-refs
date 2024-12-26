@@ -4,9 +4,25 @@
       "commandName": "Project",
       "commandLineArgs": "-c"
     },
-    "DotNetSortRefs - Create Dry-Run": {
+    "DotNetSortRefs - Create as Dry-Run": {
       "commandName": "Project",
       "commandLineArgs": "-c -dr"
+    },
+    "DotNetSortRefs - Upgrade net9.0": {
+      "commandName": "Project",
+      "commandLineArgs": "-ug net9.0"
+    },
+    "DotNetSortRefs - Upgrade net9.0 as Dry-Run": {
+      "commandName": "Project",
+      "commandLineArgs": "-ug net9.0 -dr"
+    },
+    "DotNetSortRefs - Update": {
+      "commandName": "Project",
+      "commandLineArgs": "-ud"
+    },
+    "DotNetSortRefs - Update as Dry-Run": {
+      "commandName": "Project",
+      "commandLineArgs": "-ud -dr"
     },
     "DotNetSortRefs - Inspect": {
       "commandName": "Project",
@@ -16,9 +32,17 @@
       "commandName": "Project",
       "commandLineArgs": "-cl"
     },
+    "DotNetSortRefs - Clean as Dry-Run": {
+      "commandName": "Project",
+      "commandLineArgs": "-cl -dr"
+    },
     "DotNetSortRefs - Sort": {
       "commandName": "Project",
       "commandLineArgs": ""
+    },
+    "DotNetSortRefs - Sort as Dry-Run": {
+      "commandName": "Project",
+      "commandLineArgs": "-dr"
     },
     "DotNetSortRefs - Help": {
       "commandName": "Project",
