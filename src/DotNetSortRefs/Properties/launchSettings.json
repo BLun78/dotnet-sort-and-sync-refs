@@ -2,39 +2,43 @@
   "profiles": {
     "DotNetSortRefs - Create": {
       "commandName": "Project",
-      "commandLineArgs": "-c"
+      "commandLineArgs": "c"
     },
     "DotNetSortRefs - Create as Dry-Run": {
       "commandName": "Project",
-      "commandLineArgs": "-c -dr"
+      "commandLineArgs": "c -dr"
     },
     "DotNetSortRefs - Upgrade net9.0": {
       "commandName": "Project",
-      "commandLineArgs": "-ug net9.0"
+      "commandLineArgs": "ug net9.0"
     },
     "DotNetSortRefs - Upgrade net9.0 as Dry-Run": {
       "commandName": "Project",
-      "commandLineArgs": "-ug net9.0 -dr"
+      "commandLineArgs": "ug net9.0 -dr"
+    },
+    "DotNetSortRefs - Upgrade -h": {
+      "commandName": "Project",
+      "commandLineArgs": "ug net9.0 -h"
     },
     "DotNetSortRefs - Update": {
       "commandName": "Project",
-      "commandLineArgs": "-ud"
+      "commandLineArgs": "ud"
     },
     "DotNetSortRefs - Update as Dry-Run": {
       "commandName": "Project",
-      "commandLineArgs": "-ud -dr"
+      "commandLineArgs": "ud -dr"
     },
     "DotNetSortRefs - Inspect": {
       "commandName": "Project",
-      "commandLineArgs": "-i"
+      "commandLineArgs": "i"
     },
     "DotNetSortRefs - Clean": {
       "commandName": "Project",
-      "commandLineArgs": "-cl"
+      "commandLineArgs": "cl"
     },
     "DotNetSortRefs - Clean as Dry-Run": {
       "commandName": "Project",
-      "commandLineArgs": "-cl -dr"
+      "commandLineArgs": "cl -dr"
     },
     "DotNetSortRefs - Sort": {
       "commandName": "Project",
@@ -43,6 +47,14 @@
     "DotNetSortRefs - Sort as Dry-Run": {
       "commandName": "Project",
       "commandLineArgs": "-dr"
+    },
+    "DotNetSortRefs - Sync": {
+      "commandName": "Project",
+      "commandLineArgs": "sy"
+    },
+    "DotNetSortRefs - Sync as Dry-Run": {
+      "commandName": "Project",
+      "commandLineArgs": "sy -dr"
     },
     "DotNetSortRefs - Help": {
       "commandName": "Project",
