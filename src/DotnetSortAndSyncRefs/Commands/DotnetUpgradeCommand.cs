@@ -10,7 +10,7 @@ using NuGet.Frameworks;
 
 namespace DotnetSortAndSyncRefs.Commands;
 
-[Command("dotnet-upgrade", "upgrade", "ug", 
+[Command("dotnet-upgrade", "upgrade", "ug",
     Description = "Dotnet Upgrade in all project files, can handle Multi-Framework Projects.")]
 internal class DotnetUpgradeCommand : CommandBase, ICommandBase
 {
@@ -20,7 +20,7 @@ internal class DotnetUpgradeCommand : CommandBase, ICommandBase
 
     private NuGetFramework _framework;
 
-    public DotnetUpgradeCommand(IServiceProvider serviceProvider) 
+    public DotnetUpgradeCommand(IServiceProvider serviceProvider)
         : base(serviceProvider, "dotnet-upgrade")
     {
         //_framework = NuGetFramework.Parse(FrameworkVersion);
@@ -43,8 +43,7 @@ internal class DotnetUpgradeCommand : CommandBase, ICommandBase
                     .LoadFileAsync(projFile, IsDryRun, false)
                     .ConfigureAwait(false);
 
-               
-                
+                xmlAllElementFile.FixAndGroupItemGroups();
 
                 if (IsNoDryRun)
                 {
@@ -52,6 +51,7 @@ internal class DotnetUpgradeCommand : CommandBase, ICommandBase
                         .SaveAsync()
                         .ConfigureAwait(false);
                 }
+
                 Reporter.Ok($"» {projFile}");
             }
             catch (Exception e)
