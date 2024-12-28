@@ -17,7 +17,7 @@ namespace DotnetSortAndSyncRefs.Xml
 
         protected override string GetItemGroupElements()
         {
-            return ConstConfig.ProjectElementTypes;
+            return ConstConfig.ProjectElementTypesQuery;
         }
     }
 }

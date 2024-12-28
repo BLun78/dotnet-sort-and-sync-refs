@@ -16,6 +16,10 @@ namespace DotnetSortAndSyncRefs.Commands;
 [Command("central-package-management", "cpm", "create", "c", Description = "Creates a central package management file and updates all project files.")]
 internal class CentralPackageManagementCommand : SortReferences, ICommandBase
 {
+    [Argument(0, Description =
+        "The path to a .csproj, .vbproj, .fsproj or directory. If a directory is specified, all .csproj, .vbproj and .fsproj files within folder tree will be processed. If none specified, it will use the current directory.")]
+    public override string Path { get; set; }
+
     public CentralPackageManagementCommand(IServiceProvider serviceProvider)
         : base(serviceProvider, "central-package-management")
     {
@@ -49,7 +53,7 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
 
                 // search for ItemGroup with ProjectElementTypes and for ItemGroup with ProjectElementTypes|Condition
                 var itemGroups = xmlProjectFile.Document
-                    .XPathSelectElements($"//ItemGroup[{ConstConfig.ProjectElementTypes}] | //ItemGroup[{ConstConfig.Condition} and {ConstConfig.ProjectElementTypes}]")
+                    .XPathSelectElements($"//ItemGroup[{ConstConfig.ProjectElementTypesQuery}] | //ItemGroup[{ConstConfig.Condition} and {ConstConfig.ProjectElementTypesQuery}]")
                     .ToList();
                 xmlProjectFile.CreateItemGroups(itemGroups, itemGroup, dict);
 

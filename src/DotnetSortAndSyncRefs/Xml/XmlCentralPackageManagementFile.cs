@@ -9,12 +9,12 @@ namespace DotnetSortAndSyncRefs.Xml;
 internal class XmlCentralPackageManagementFile : XmlBaseFile
 {
     private const string InitialFile =
-        """
+        $$"""
         <Project>
-          <PropertyGroup>
+          <{{ConstConfig.PropertyGroup}}>
             <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-          </PropertyGroup>
-          <ItemGroup />
+          </{{ConstConfig.PropertyGroup}}>
+          <{{ConstConfig.ItemGroup}} />
         </Project>
         """;
 

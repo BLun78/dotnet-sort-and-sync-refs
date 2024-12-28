@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
@@ -36,7 +37,33 @@ internal abstract class XmlBaseFile
 
     public XDocument Document { get; protected set; }
 
-    public IEnumerable<XElement> ItemGroups => Document?.XPathSelectElements($"//ItemGroup[{GetItemGroupElements()}]");
+    public IEnumerable<XElement> ItemGroups =>
+        Document?.XPathSelectElements($"//{ConstConfig.ItemGroup}[{GetItemGroupElements()}]")
+        ?? Array.Empty<XElement>();
+
+    public IEnumerable<XElement> PropertyGroups =>
+        Document?.XPathSelectElements($"//{ConstConfig.PropertyGroup}[{ConstConfig.TargetFrameworksQuery}]")
+        ?? Array.Empty<XElement>();
+
+    public XElement? TargetFrameworks
+    {
+        get
+        {
+            var propertyGroup= PropertyGroups.FirstOrDefault();
+            var node = (XElement)propertyGroup.FirstNode;
+            while (node != null)
+            {
+                if (node.Name == ConstConfig.TargetFramework ||
+                    node.Name == ConstConfig.TargetFrameworks)
+                {
+                    return node;
+                }
+                node = (XElement)node.NextNode;
+            }
+
+            return null;
+        }
+    }
 
     public IEnumerable<ItemGroup> ParsedItemGroups
     {
@@ -147,7 +174,7 @@ internal abstract class XmlBaseFile
                 .ConfigureAwait(false);
 
             await Document
-                .SaveAsync(fileStream, SaveOptions.DisableFormatting, cancellationToken)
+                .SaveAsync(fileStream, SaveOptions.None, cancellationToken)
                 .ConfigureAwait(false);
 
         }

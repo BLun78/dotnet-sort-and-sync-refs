@@ -13,6 +13,10 @@ namespace DotnetSortAndSyncRefs.Commands
         Description = "Specifies whether to inspect and return a non-zero exit code if one or more projects have non-sorted package references.")]
     internal class InspectorCommand : CommandBase, ICommandBase
     {
+        [Argument(0, Description =
+            "The path to a .csproj, .vbproj, .fsproj or directory. If a directory is specified, all .csproj, .vbproj and .fsproj files within folder tree will be processed. If none specified, it will use the current directory.")]
+        public override string Path { get; set; }
+
         public InspectorCommand(IServiceProvider serviceProvider)
             : base(serviceProvider, "inspect")
         {

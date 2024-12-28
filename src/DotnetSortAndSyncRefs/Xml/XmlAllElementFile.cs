@@ -12,6 +12,6 @@ internal class XmlAllElementFile : XmlBaseFile
 
     protected override string GetItemGroupElements()
     {
-        return ConstConfig.AllElementTypes;
+        return ConstConfig.AllElementTypesQuery;
     }
 }

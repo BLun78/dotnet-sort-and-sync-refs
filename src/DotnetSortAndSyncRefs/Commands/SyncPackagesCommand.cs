@@ -16,6 +16,10 @@ namespace DotnetSortAndSyncRefs.Commands
         Description = "Syncs package references in all project files.")]
     internal class SyncPackagesCommand : SortReferences, ICommandBase
     {
+        [Argument(0, Description =
+            "The path to a .csproj, .vbproj, .fsproj or directory. If a directory is specified, all .csproj, .vbproj and .fsproj files within folder tree will be processed. If none specified, it will use the current directory.")]
+        public override string Path { get; set; }
+
         public SyncPackagesCommand(IServiceProvider serviceProvider)
             : base(serviceProvider, "sync")
         {

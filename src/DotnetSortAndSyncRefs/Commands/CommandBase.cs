@@ -36,9 +36,7 @@ namespace DotnetSortAndSyncRefs.Commands
 
         protected readonly string CentralPackageManagementFile = "Directory.Packages.props";
 
-        [Argument(0, Description =
-            "The path to a .csproj, .vbproj, .fsproj or directory. If a directory is specified, all .csproj, .vbproj and .fsproj files within folder tree will be processed. If none specified, it will use the current directory.")]
-        public string Path { get; set; }
+        public virtual string Path { get; set; }
 
         [Option(CommandOptionType.NoValue,
             Description =
@@ -115,7 +113,7 @@ namespace DotnetSortAndSyncRefs.Commands
                     foreach (var itemGroup in xmlFile.ItemGroups)
                     {
                         var references = itemGroup
-                            .XPathSelectElements(ConstConfig.AllElementTypes)
+                            .XPathSelectElements(ConstConfig.AllElementTypesQuery)
                             .Select(x => x.Attribute("Include")?.Value.ToLowerInvariant())
                             .ToList();
 
