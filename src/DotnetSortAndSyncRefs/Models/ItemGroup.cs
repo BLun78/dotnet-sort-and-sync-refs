@@ -20,7 +20,8 @@ namespace DotnetSortAndSyncRefs.Models
         public XElement Element { get; private set; }
         public bool HasCondition { get; private set; }
         public string Condition { get; private set; }
-        public NuGetFramework Framework { get; private set; }
+        public string Framework { get; private set; }
+        public NuGetFramework NuGetFramework { get; private set; }
 
         private void FindCondition()
         {
@@ -40,7 +41,8 @@ namespace DotnetSortAndSyncRefs.Models
             if (splitArray.Length == 5)
             {
                 var framework = splitArray[3];
-                Framework = new NuGetFramework(framework);
+                NuGetFramework = new NuGetFramework(framework);
+                Framework = framework;
             }
         }
 

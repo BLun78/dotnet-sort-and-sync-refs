@@ -49,7 +49,7 @@ internal abstract class XmlBaseFile
     {
         get
         {
-            var propertyGroup= PropertyGroups.FirstOrDefault();
+            var propertyGroup = PropertyGroups.FirstOrDefault();
             var node = (XElement)propertyGroup.FirstNode;
             while (node != null)
             {
@@ -81,29 +81,29 @@ internal abstract class XmlBaseFile
         get
         {
             var dict = new Dictionary<string, List<XElement>>();
-            foreach (var itemGroup in ItemGroups)
+            foreach (var itemGroup in ParsedItemGroups)
             {
-                var condition = GetCondition(itemGroup);
-                if (!string.IsNullOrWhiteSpace(condition))
+
+                if (!string.IsNullOrWhiteSpace(itemGroup.Framework))
                 {
-                    if (dict.ContainsKey(condition))
+                    if (dict.ContainsKey(itemGroup.Framework))
                     {
-                        dict[condition].Add(itemGroup);
+                        dict[itemGroup.Framework].Add(itemGroup.Element);
                     }
                     else
                     {
-                        dict.Add(condition, new List<XElement>() { itemGroup });
+                        dict.Add(itemGroup.Framework, new List<XElement>() { itemGroup.Element });
                     }
                 }
                 else
                 {
                     if (dict.ContainsKey(ConstConfig.WithOutCondition))
                     {
-                        dict[ConstConfig.WithOutCondition].Add(itemGroup);
+                        dict[ConstConfig.WithOutCondition].Add(itemGroup.Element);
                     }
                     else
                     {
-                        dict.Add(ConstConfig.WithOutCondition, new List<XElement>() { itemGroup });
+                        dict.Add(ConstConfig.WithOutCondition, new List<XElement>() { itemGroup.Element });
                     }
                 }
             }
@@ -261,5 +261,25 @@ internal abstract class XmlBaseFile
         return null;
     }
 
+    public XElement CloneItemGroupWithNewFrameworkCondition(XElement inputElement, string frameworkVersion)
+    {
+        var condition = $"'$(TargetFramework)' == '{frameworkVersion}'";
+
+        var element = new XElement("ItemGroup");
+        element.SetAttributeValue(ConstConfig.Condition, condition);
+        var node = inputElement.FirstNode;
+        while (node != null)
+        {
+            element.AddFirst(node);
+
+            node = node.NextNode;
+        }
+
+        inputElement.AddAfterSelf(element);
+        return element;
+
+    }
+
     protected abstract string GetItemGroupElements();
+
 }

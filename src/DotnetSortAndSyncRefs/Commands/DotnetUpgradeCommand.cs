@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using DotnetSortAndSyncRefs.Common;
+using DotnetSortAndSyncRefs.Services;
 using DotnetSortAndSyncRefs.Xml;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,8 +15,10 @@ namespace DotnetSortAndSyncRefs.Commands;
 
 [Command("dotnet-upgrade", "upgrade", "ug",
     Description = "Dotnet Upgrade in all project files, can handle Multi-Framework Projects.")]
-internal class DotnetUpgradeCommand : CommandBase, ICommandBase
+internal partial class DotnetUpgradeCommand : CommandBase, ICommandBase
 {
+    private readonly NuGetService _nuGetService;
+
     [Argument(0, Description =
         "Specifies whether to do a dotnet update. e. g. net481, net9.0")]
     public string FrameworkVersion { get; set; }
@@ -24,9 +29,20 @@ internal class DotnetUpgradeCommand : CommandBase, ICommandBase
 
     private NuGetFramework NuGetFramework => NuGetFramework.Parse(FrameworkVersion);
 
-    public DotnetUpgradeCommand(IServiceProvider serviceProvider)
+    [GeneratedRegex(@"net\d{1,2}\.\d$|netcoreapp\d{1,2}\.\d$", RegexOptions.IgnoreCase)]
+    private static partial Regex DotnetCoreRegex();
+
+    [GeneratedRegex(@"netstandard\d\.\d$", RegexOptions.IgnoreCase)]
+    private static partial Regex NetStandardRegex();
+
+    [GeneratedRegex(@"net\d{2,3}$", RegexOptions.IgnoreCase)]
+    private static partial Regex NetFrameworkRegex();
+
+    public DotnetUpgradeCommand(IServiceProvider serviceProvider,
+        NuGetService nuGetService)
         : base(serviceProvider, "dotnet-upgrade")
     {
+        _nuGetService = nuGetService;
     }
 
     public override async Task<int> OnExecute()
@@ -48,6 +64,7 @@ internal class DotnetUpgradeCommand : CommandBase, ICommandBase
 
                 xmlAllElementFile.FixAndGroupItemGroups();
                 SetFrameworks(xmlAllElementFile.TargetFrameworks);
+                DuplicateItemGroupsWithFrameworkCondition(xmlAllElementFile);
 
                 if (IsNoDryRun)
                 {
@@ -67,6 +84,14 @@ internal class DotnetUpgradeCommand : CommandBase, ICommandBase
         }
 
         return 0;
+    }
+
+    private void DuplicateItemGroupsWithFrameworkCondition(XmlBaseFile xmlBaseFile)
+    {
+        var r = GetNewItemGroupWithConditions(xmlBaseFile, FrameworkVersion);
+     
+
+
     }
 
     private void SetFrameworks(XElement? element)
@@ -94,5 +119,83 @@ internal class DotnetUpgradeCommand : CommandBase, ICommandBase
         }
         throw new InvalidOperationException(
             "No TargetFramework- or TargetFrameworks-Element was found in PropertyGroup.");
+    }
+
+    /// <summary>
+    /// TODO: Support all frameworks
+    /// https://learn.microsoft.com/en-us/dotnet/standard/frameworks
+    /// </summary>
+    /// <param name="itemGroupsConditionGrouped"></param>
+    /// <param name="frameworkVersion"></param>
+    /// <returns></returns>
+    public XElement GetNewItemGroupWithConditions(
+        XmlBaseFile itemGroupsConditionGrouped,
+        string frameworkVersion)
+    {
+        var itemGroupsWithCondition =
+            itemGroupsConditionGrouped
+                .ItemGroupsConditionGrouped
+                .Where(x => x.Key != ConstConfig.WithOutCondition)
+                .ToList();
+        var dotnetCoreRegex = DotnetCoreRegex();
+        var netStandardRegex = NetStandardRegex();
+        var netFrameworkRegex = NetFrameworkRegex();
+
+        if (netStandardRegex.IsMatch(frameworkVersion))
+        {
+            foreach (var item in itemGroupsWithCondition
+                         .Where(x => netStandardRegex.IsMatch(x.Key)
+                             ).OrderByDescending(x => x.Key)
+                         .ToList()
+                     )
+            {
+                var element = item.Value.FirstOrDefault();
+
+                var newItem = itemGroupsConditionGrouped.CloneItemGroupWithNewFrameworkCondition(element, frameworkVersion);
+                _nuGetService.UpdateReferences(newItem, frameworkVersion);
+
+                return newItem;
+
+            }
+        }
+        else if (dotnetCoreRegex.IsMatch(frameworkVersion))
+        {
+            foreach (var item in itemGroupsWithCondition
+                         .Where(x => dotnetCoreRegex.IsMatch(x.Key)
+                         ).OrderByDescending(x => x.Key)
+                         .ToList()
+                    )
+            {
+                var element = item.Value.FirstOrDefault();
+
+                var newItem = itemGroupsConditionGrouped.CloneItemGroupWithNewFrameworkCondition(element, frameworkVersion);
+                _nuGetService.UpdateReferences(newItem, frameworkVersion);
+
+                return newItem;
+            }
+        }
+        else if (netFrameworkRegex.IsMatch(frameworkVersion))
+        {
+            foreach (var item in itemGroupsWithCondition
+                         .Where(x => netFrameworkRegex.IsMatch(x.Key)
+                         ).OrderByDescending(x => x.Key.PadRight(6, '0'))
+                         .ToList()
+                    )
+            {
+                var element = item.Value.FirstOrDefault();
+
+                var newItem = itemGroupsConditionGrouped.CloneItemGroupWithNewFrameworkCondition(element, frameworkVersion);
+                _nuGetService.UpdateReferences(newItem, frameworkVersion);
+
+                return newItem;
+
+            }
+        }
+        else
+        {
+            throw new NotSupportedException($"Framework {frameworkVersion} is not supported.");
+        }
+
+        return null;
     }
 }

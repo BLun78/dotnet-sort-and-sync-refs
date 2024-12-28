@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using DotnetSortAndSyncRefs.Common;
 
 namespace DotnetSortAndSyncRefs.Extensions
 {
-    internal static class XElementExtensions
+    internal static partial class XElementExtensions
     {
-
         public static List<XElement> GetReferenceElements(this List<XElement> elementsOfProjectFiles)
         {
             var attributesOfProjectFiles = new List<XElement>();
@@ -35,5 +36,6 @@ namespace DotnetSortAndSyncRefs.Extensions
             }
             return attributesOfProjectFiles;
         }
+
     }
 }

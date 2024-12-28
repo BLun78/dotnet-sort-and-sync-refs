@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using DotnetSortAndSyncRefs.Commands;
 using DotnetSortAndSyncRefs.Common;
 using DotnetSortAndSyncRefs.NugetSpace;
+using DotnetSortAndSyncRefs.Services;
 using DotnetSortAndSyncRefs.Xml;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,6 +51,7 @@ namespace DotnetSortAndSyncRefs
                 .AddSingleton<SyncPackagesCommand>()
 
                 // Nuget 
+                .AddTransient<NuGetService>()
                 .AddSingleton<SourceCacheContext>()
                 .AddSingleton<NuGetRepository>()
                 .AddSingleton<SourceRepository>(provider =>
