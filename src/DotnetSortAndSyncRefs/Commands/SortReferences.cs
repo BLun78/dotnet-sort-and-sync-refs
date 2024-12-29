@@ -1,16 +1,15 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
-using System.Runtime.InteropServices.JavaScript;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.XPath;
 using System.Xml.Xsl;
-using DotnetSortAndSyncRefs.Commands;
+using DotnetSortAndSyncRefs.Common;
 using DotnetSortAndSyncRefs.Xml;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DotnetSortAndSyncRefs.Common;
+namespace DotnetSortAndSyncRefs.Commands;
 
 internal abstract class SortReferences : CommandBase, ICommandBase
 {

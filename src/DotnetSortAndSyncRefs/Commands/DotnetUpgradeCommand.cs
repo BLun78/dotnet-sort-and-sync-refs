@@ -15,7 +15,7 @@ namespace DotnetSortAndSyncRefs.Commands;
 
 [Command("dotnet-upgrade", "upgrade", "ug",
     Description = "Dotnet Upgrade in all project files, can handle Multi-Framework Projects.")]
-internal partial class DotnetUpgradeCommand : CommandBase, ICommandBase
+internal partial class DotnetUpgradeCommand : SyncPackages, ICommandBase
 {
     private readonly NuGetService _nuGetService;
 
@@ -47,6 +47,8 @@ internal partial class DotnetUpgradeCommand : CommandBase, ICommandBase
 
     public override async Task<int> OnExecute()
     {
+        var result = ErrorCodes.CriticalError;
+
         var xmlCentralPackageManagementFile = ServiceProvider.GetRequiredService<XmlCentralPackageManagementFile>();
         var cpm = FileProps.First(x => x.Contains(CentralPackageManagementFile));
         await xmlCentralPackageManagementFile
@@ -55,6 +57,7 @@ internal partial class DotnetUpgradeCommand : CommandBase, ICommandBase
 
         foreach (var projFile in FileProjects)
         {
+            Reporter.Output($"Running dotnet-upgrade with {FrameworkVersion} ...");
             try
             {
                 var xmlAllElementFile = ServiceProvider.GetRequiredService<XmlAllElementFile>();
@@ -74,6 +77,7 @@ internal partial class DotnetUpgradeCommand : CommandBase, ICommandBase
                 }
 
                 Reporter.Ok($"» {projFile}");
+                result = ErrorCodes.Ok;
             }
             catch (Exception e)
             {
@@ -83,13 +87,20 @@ internal partial class DotnetUpgradeCommand : CommandBase, ICommandBase
 
         }
 
-        return 0;
+        if (result == ErrorCodes.Ok)
+        {
+            return await base
+                .OnExecute()
+                .ConfigureAwait(false);
+        }
+
+        return result;
     }
 
     private void DuplicateItemGroupsWithFrameworkCondition(XmlBaseFile xmlBaseFile)
     {
         var r = GetNewItemGroupWithConditions(xmlBaseFile, FrameworkVersion);
-     
+
 
 
     }
