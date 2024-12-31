@@ -34,9 +34,9 @@ namespace DotnetSortAndSyncRefs.Test.Commands
             var pathOfExecution = @"c:\execution\";
             var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
             {
-                { @"c:\solution\Directory.Packages.props", new MockFileData(MockFileStrings.GetDirectoryPackagesProps()) },
-                { @"c:\solution\Test.Dotnet.csproj", new MockFileData(MockFileStrings.GetTestDotnetCsproj()) },
-                { @"c:\solution\Test.NetStandard.csproj", new MockFileData(MockFileStrings.GetTestNetStandardCsproj()) }
+                { @"c:\solution\Directory.Packages.props", new MockFileData(MockFileStrings.GetDirectoryPackagesPropsUnsorted()) },
+                { @"c:\solution\Test.Dotnet.csproj", new MockFileData(MockFileStrings.GetTestDotnetCsprojUnsorted()) },
+                { @"c:\solution\Test.NetStandard.csproj", new MockFileData(MockFileStrings.GetTestNetStandardCsprojUnsorted()) }
             }, pathOfExecution);
 
             var di = new DependencyInjectionMock(fileSystem, reporter);
@@ -58,6 +58,38 @@ namespace DotnetSortAndSyncRefs.Test.Commands
         }
 
         [TestMethod]
+        public async Task TestCommandBaseCtorOkSortedAsync()
+        {
+            // arrange
+            var reporter = Substitute.For<IReporter>();
+            var path = @"c:\solution";
+            var pathOfExecution = @"c:\execution\";
+            var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
+            {
+                { @"c:\solution\Directory.Packages.props", new MockFileData(MockFileStrings.GetDirectoryPackagesPropsUnsorted()) },
+                { @"c:\solution\Test.Dotnet.csproj", new MockFileData(MockFileStrings.GetTestDotnetCsprojSorted()) },
+                { @"c:\solution\Test.NetStandard.csproj", new MockFileData(MockFileStrings.GetTestNetStandardCsprojUnsorted()) }
+            }, pathOfExecution);
+
+            var di = new DependencyInjectionMock(fileSystem, reporter);
+            di.ServiceCollection.AddSingleton<CommandBaseTest>();
+            var provider = di.CreateServiceProvider();
+            var command = provider.GetRequiredService<CommandBaseTest>();
+            command.Path = path;
+
+            // act
+            var result = await command.OnExecute();
+
+            // assert
+            Assert.AreEqual(2, command.ProjFilesWithNonSortedReferences.Count); // result of Inspection
+            Assert.AreEqual(3, command.AllFiles.Count);
+            Assert.AreEqual(2, command.FileProjects.Count);
+            Assert.AreEqual(1, command.FileProps.Count);
+            Assert.AreEqual(path, command.Path);
+            Assert.AreEqual(ErrorCodes.Ok, result);
+        }
+
+        [TestMethod]
         public async Task TestCommandBaseCtorFileDoNotExistsAsync()
         {
             // arrange
@@ -66,9 +98,9 @@ namespace DotnetSortAndSyncRefs.Test.Commands
             var pathOfExecution = @"c:\execution\";
             var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
             {
-                { @"c:\solution\Directory.Packages.props2", new MockFileData(MockFileStrings.GetDirectoryPackagesProps()) },
-                { @"c:\solution\Test.Dotnet.csproj2", new MockFileData(MockFileStrings.GetTestDotnetCsproj()) },
-                { @"c:\solution\Test.NetStandard.csproj2", new MockFileData(MockFileStrings.GetTestNetStandardCsproj()) }
+                { @"c:\solution\Directory.Packages.props2", new MockFileData(MockFileStrings.GetDirectoryPackagesPropsUnsorted()) },
+                { @"c:\solution\Test.Dotnet.csproj2", new MockFileData(MockFileStrings.GetTestDotnetCsprojUnsorted()) },
+                { @"c:\solution\Test.NetStandard.csproj2", new MockFileData(MockFileStrings.GetTestNetStandardCsprojUnsorted()) }
             }, pathOfExecution);
 
             var di = new DependencyInjectionMock(fileSystem, reporter);

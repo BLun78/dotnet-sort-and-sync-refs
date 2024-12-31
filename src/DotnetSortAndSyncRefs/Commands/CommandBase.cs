@@ -108,6 +108,7 @@ namespace DotnetSortAndSyncRefs.Commands
         public async Task<List<string>> InspectAsync()
         {
             var projFilesWithNonSortedReferences = new List<string>();
+            var projFilesOk = new List<string>();
 
             foreach (var projFile in AllFiles)
             {
@@ -117,6 +118,8 @@ namespace DotnetSortAndSyncRefs.Commands
                     await xmlFile
                         .LoadFileReadOnlyAsync(projFile)
                         .ConfigureAwait(false);
+
+                    xmlFile.FixAndGroupItemGroups();
 
                     foreach (var itemGroup in xmlFile.ItemGroups)
                     {
@@ -138,10 +141,10 @@ namespace DotnetSortAndSyncRefs.Commands
                             Reporter.NotOk($"» {projFile}");
                             projFilesWithNonSortedReferences.Add(projFile);
                         }
-                        else if (!projFilesWithNonSortedReferences.Contains(projFile))
+                        else if (!projFilesOk.Contains(projFile))
                         {
                             Reporter.Ok($"» {projFile}");
-                            projFilesWithNonSortedReferences.Add(projFile);
+                            projFilesOk.Add(projFile);
                         }
                     }
                 }

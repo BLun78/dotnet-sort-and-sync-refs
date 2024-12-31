@@ -29,7 +29,7 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
     {
         var result = ErrorCodes.CreateCentralPackageManagementFailed;
         var error = false;
-        var reporter = ServiceProvider.GetRequiredService<Reporter>();
+        var reporter = ServiceProvider.GetRequiredService<Common.IReporter>();
         var centralPackageManagementFile = ServiceProvider.GetRequiredService<XmlCentralPackageManagementFile>();
 
         centralPackageManagementFile.CreateCentralPackageManagementFile(Path, IsDryRun);
