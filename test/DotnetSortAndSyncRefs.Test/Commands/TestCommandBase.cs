@@ -26,7 +26,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
         }
 
         [TestMethod]
-        public async Task TestCommandBaseCtorOkAsync()
+        public async Task TestCommandBaseOkAsync()
         {
             // arrange
             var reporter = Substitute.For<IReporter>();
@@ -58,7 +58,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
         }
 
         [TestMethod]
-        public async Task TestCommandBaseCtorOkSortedAsync()
+        public async Task TestCommandBaseOkSortedAsync()
         {
             // arrange
             var reporter = Substitute.For<IReporter>();
@@ -90,7 +90,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
         }
 
         [TestMethod]
-        public async Task TestCommandBaseCtorFileDoNotExistsAsync()
+        public async Task TestCommandBaseFileDoNotExistsAsync()
         {
             // arrange
             var reporter = Substitute.For<IReporter>();
@@ -121,7 +121,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
         }
 
         [TestMethod]
-        public async Task TestCommandBaseCtorDirectoryDoNotExistsAsync()
+        public async Task TestCommandBaseDirectoryDoNotExistsAsync()
         {
             // arrange
             var reporter = Substitute.For<IReporter>();
@@ -146,7 +146,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
         }
 
         [TestMethod]
-        public async Task TestCommandBaseCtorSetPathToExecutionAsync()
+        public async Task TestCommandBaseSetPathToExecutionAsync()
         {
             // arrange
             var reporter = Substitute.For<IReporter>();
