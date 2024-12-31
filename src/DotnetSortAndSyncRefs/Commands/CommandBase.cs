@@ -1,6 +1,5 @@
 ﻿using DotnetSortAndSyncRefs.Common;
 using DotnetSortAndSyncRefs.Xml;
-using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -10,27 +9,30 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.XPath;
+using McMaster.Extensions.CommandLineUtils;
 
 namespace DotnetSortAndSyncRefs.Commands
 {
     [HelpOption]
     internal abstract class CommandBase : ICommandBase
     {
+        private readonly string _commandStartMessage;
         protected readonly IServiceProvider ServiceProvider;
         protected readonly IFileSystem FileSystem;
-        protected readonly Reporter Reporter;
-        protected List<string> AllExtensions { get; private set; }
-        protected List<string> FileProps { get; private set; }
-        protected List<string> FileProjects { get; private set; }
-        protected List<string> AllFiles { get; private set; }
-        protected List<string> ProjFilesWithNonSortedReferences { get; private set; }
+        protected readonly Common.IReporter Reporter;
+        public List<string> AllExtensions { get; private set; }
+        public List<string> FileProps { get; private set; }
+        public List<string> FileProjects { get; private set; }
+        public List<string> AllFiles { get; private set; }
+        public List<string> ProjFilesWithNonSortedReferences { get; private set; }
 
-        protected HashSet<string> ProjectFilePostfix = new(StringComparer.OrdinalIgnoreCase) {
+        public HashSet<string> ProjectFilePostfix = new(StringComparer.OrdinalIgnoreCase) {
             ".csproj",
             ".vbproj",
             ".fsproj",
         };
-        protected HashSet<string> AdditionalFilePostfix = new(StringComparer.OrdinalIgnoreCase) {
+
+        public HashSet<string> AdditionalFilePostfix = new(StringComparer.OrdinalIgnoreCase) {
             ".props"
         };
 
@@ -49,10 +51,16 @@ namespace DotnetSortAndSyncRefs.Commands
         protected CommandBase(IServiceProvider serviceProvider, string commandStartMessage)
         {
             ServiceProvider = serviceProvider;
+            _commandStartMessage = commandStartMessage;
             FileSystem = serviceProvider.GetRequiredService<IFileSystem>();
-            Reporter = serviceProvider.GetRequiredService<Reporter>();
+            Reporter = serviceProvider.GetRequiredService<Common.IReporter>();
 
-            Reporter.Output($"start command: {commandStartMessage}");
+          
+        }
+
+        public virtual Task<int> OnExecute()
+        {
+            Reporter.Output($"start command: {_commandStartMessage}");
 
             if (string.IsNullOrEmpty(Path))
             {
@@ -65,7 +73,7 @@ namespace DotnetSortAndSyncRefs.Commands
                   FileSystem.Directory.Exists(Path)))
             {
                 Reporter.Error("Directory or file does not exist.");
-                Environment.Exit(ErrorCodes.DirectoryDoNotExists);
+                return Task.FromResult(ErrorCodes.DirectoryDoNotExists);
             }
 
             AllExtensions = new List<string> { };
@@ -82,7 +90,7 @@ namespace DotnetSortAndSyncRefs.Commands
             if (AllFiles.Count == 0)
             {
                 Reporter.Error($"no '{string.Join(", ", AllExtensions)}'' files found.");
-                Environment.Exit(ErrorCodes.FileDoNotExists);
+                return Task.FromResult(ErrorCodes.FileDoNotExists);
             }
 
             Reporter.Output("Running analysis ...");
@@ -91,11 +99,11 @@ namespace DotnetSortAndSyncRefs.Commands
             if (ProjFilesWithNonSortedReferences == null)
             {
                 Reporter.Do("Please solve the issue of the Project file(s).");
-                Environment.Exit(ErrorCodes.ProjectFileHasNotAValidXmlFormat);
+                return Task.FromResult(ErrorCodes.ProjectFileHasNotAValidXmlFormat);
             }
-        }
 
-        public abstract Task<int> OnExecute();
+            return Task.FromResult(ErrorCodes.Ok);
+        }
 
         public async Task<List<string>> InspectAsync()
         {

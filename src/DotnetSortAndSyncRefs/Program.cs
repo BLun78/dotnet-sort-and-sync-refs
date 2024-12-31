@@ -42,9 +42,6 @@ namespace DotnetSortAndSyncRefs
                 .AddSingleton<global::DotnetSortAndSyncRefs.Common.IReporter>(provider => new Reporter(provider.GetRequiredService<IConsole>()!))
                 .AddSingleton<IFileSystem, FileSystem>()
 
-                // Commands
-                .AddCommands()
-
                 // Nuget 
                 .AddTransient<NuGetService>()
                 .AddSingleton<SourceCacheContext>()
@@ -66,6 +63,9 @@ namespace DotnetSortAndSyncRefs
                     return Repository.Factory.GetCoreV3(packageSource);
                 })
                 .AddSingleton<ILogger, NuGetLogger>()
+
+                // Commands
+                .AddCommands()
 
                 // XML Files
                 .AddXmlFiles()

@@ -1,0 +1,6 @@
+﻿<RunSettings>
+  <RunConfiguration>
+    <MaxCpuCount>-1</MaxCpuCount>
+    <!-- Uses all available processors -->
+  </RunConfiguration>
+</RunSettings>

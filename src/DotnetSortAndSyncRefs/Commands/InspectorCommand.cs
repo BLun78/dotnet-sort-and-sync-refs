@@ -22,17 +22,23 @@ namespace DotnetSortAndSyncRefs.Commands
         {
         }
 
-        public override Task<int> OnExecute()
+        public override async Task<int> OnExecute()
         {
+            var result = await base.OnExecute();
+            if (result != ErrorCodes.Ok)
+            {
+                return result;
+            }
+            
             Reporter.Output("Running inspection ...");
 
             PrintInspectionResults(AllFiles, ProjFilesWithNonSortedReferences);
 
-            var result = ProjFilesWithNonSortedReferences.Any()
+            result = ProjFilesWithNonSortedReferences.Any()
                 ? ErrorCodes.Ok
                 : ErrorCodes.InspectionFoundNothing;
 
-            return Task.FromResult(result);
+            return result;
         }
 
 

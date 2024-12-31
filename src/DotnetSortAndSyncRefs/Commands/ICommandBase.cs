@@ -2,7 +2,7 @@
 
 namespace DotnetSortAndSyncRefs.Commands;
 
-internal interface ICommandBase
+public interface ICommandBase
 {
     Task<int> OnExecute();
 }

@@ -8,7 +8,7 @@ using McMaster.Extensions.CommandLineUtils;
 
 namespace DotnetSortAndSyncRefs.Commands
 {
-    [Command("nuget-update", "update", "ud", "u", 
+    [Command("nuget-update", "update", "ud", "u",
         Description = "Updates NuGet packages in all project files.")]
     internal class NuGetUpdateCommand : CommandBase, ICommandBase
     {
@@ -16,14 +16,19 @@ namespace DotnetSortAndSyncRefs.Commands
             "The path to a .csproj, .vbproj, .fsproj or directory. If a directory is specified, all .csproj, .vbproj and .fsproj files within folder tree will be processed. If none specified, it will use the current directory.")]
         public override string Path { get; set; }
 
-        public NuGetUpdateCommand(IServiceProvider serviceProvider) 
+        public NuGetUpdateCommand(IServiceProvider serviceProvider)
             : base(serviceProvider, "nuget-update")
         {
         }
 
-        public override Task<int> OnExecute()
+        public override async Task<int> OnExecute()
         {
-            var result = ErrorCodes.NuGetUpdateIsFailed;
+            var result = await base.OnExecute();
+            if (result != ErrorCodes.Ok)
+            {
+                return result;
+            }
+
             throw new NotImplementedException();
         }
     }
