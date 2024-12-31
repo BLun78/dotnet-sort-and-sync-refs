@@ -1,7 +1,7 @@
-﻿namespace DotnetSortAndSyncRefs.Test
+﻿namespace DotnetSortAndSyncRefs.Test.Commands
 {
     [TestClass]
-    public sealed class Test1
+    public sealed class TestSortCommand
     {
         [TestMethod]
         public void TestMethod1()

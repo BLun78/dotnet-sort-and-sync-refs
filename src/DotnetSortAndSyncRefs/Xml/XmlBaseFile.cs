@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
-using System.Runtime.InteropServices.JavaScript;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -16,14 +15,13 @@ namespace DotnetSortAndSyncRefs.Xml;
 internal abstract class XmlBaseFile
 {
     protected readonly IFileSystem FileSystem;
-    protected readonly Reporter Reporter;
+    protected readonly IReporter Reporter;
     protected bool IsNoDryRun;
     protected bool DoBackup;
-
-
+    
     protected XmlBaseFile(
         IFileSystem fileSystem,
-        Reporter reporter)
+        IReporter reporter)
     {
         FileSystem = fileSystem;
         Reporter = reporter;
@@ -37,15 +35,15 @@ internal abstract class XmlBaseFile
 
     public XDocument Document { get; protected set; }
 
-    public IEnumerable<XElement> ItemGroups =>
+    public virtual IEnumerable<XElement> ItemGroups =>
         Document?.XPathSelectElements($"//{ConstConfig.ItemGroup}[{GetItemGroupElements()}]")
         ?? Array.Empty<XElement>();
 
-    public IEnumerable<XElement> PropertyGroups =>
+    public virtual IEnumerable<XElement> PropertyGroups =>
         Document?.XPathSelectElements($"//{ConstConfig.PropertyGroup}[{ConstConfig.TargetFrameworksQuery}]")
         ?? Array.Empty<XElement>();
 
-    public XElement? TargetFrameworks
+    public virtual XElement? TargetFrameworks
     {
         get
         {
@@ -65,7 +63,7 @@ internal abstract class XmlBaseFile
         }
     }
 
-    public IEnumerable<ItemGroup> ParsedItemGroups
+    public virtual IEnumerable<ItemGroup> ParsedItemGroups
     {
         get
         {
@@ -76,7 +74,7 @@ internal abstract class XmlBaseFile
         }
     }
 
-    public IDictionary<string, List<XElement>> ItemGroupsConditionGrouped
+    public virtual IDictionary<string, List<XElement>> ItemGroupsConditionGrouped
     {
         get
         {

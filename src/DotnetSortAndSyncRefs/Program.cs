@@ -38,17 +38,12 @@ namespace DotnetSortAndSyncRefs
         {
             var provider = new ServiceCollection()
                 // Reporter, Console and Commands
-                .AddSingleton(PhysicalConsole.Singleton)
-                .AddSingleton<Reporter>(provider => new Reporter(provider.GetRequiredService<IConsole>()!))
+                .AddSingleton<IConsole>(PhysicalConsole.Singleton)
+                .AddSingleton<global::DotnetSortAndSyncRefs.Common.IReporter>(provider => new Reporter(provider.GetRequiredService<IConsole>()!))
                 .AddSingleton<IFileSystem, FileSystem>()
 
-                // Processors
-                .AddSingleton<CentralPackageManagementCommand>()
-                .AddSingleton<DotnetUpgradeCommand>()
-                .AddSingleton<InspectorCommand>()
-                .AddSingleton<NuGetUpdateCommand>()
-                .AddSingleton<SortReferencesCommand>()
-                .AddSingleton<SyncPackagesCommand>()
+                // Commands
+                .AddCommands()
 
                 // Nuget 
                 .AddTransient<NuGetService>()
@@ -73,9 +68,7 @@ namespace DotnetSortAndSyncRefs
                 .AddSingleton<ILogger, NuGetLogger>()
 
                 // XML Files
-                .AddTransient<XmlAllElementFile>()
-                .AddTransient<XmlProjectFile>()
-                .AddTransient<XmlCentralPackageManagementFile>()
+                .AddXmlFiles()
 
                 .BuildServiceProvider();
 
@@ -101,7 +94,7 @@ namespace DotnetSortAndSyncRefs
                 return ErrorCodes.ApplicationCriticalError;
             }
         }
-      
+
         private static string GetVersion() => $"{typeof(Program)
             .Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
@@ -121,7 +114,7 @@ namespace DotnetSortAndSyncRefs
             }
 
             // default command
-            await app.ExecuteAsync(new []{ "sort" }, CancellationToken.None).ConfigureAwait(false);
+            await app.ExecuteAsync(new[] { "sort" }, CancellationToken.None).ConfigureAwait(false);
 
             return ErrorCodes.Ok;
         }

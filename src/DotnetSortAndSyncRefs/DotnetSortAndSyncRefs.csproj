@@ -24,8 +24,8 @@
     <Content Include="TestContent\Directory.Packages.props">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestContent\Test.csproj">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    <Content Include="TestContent\Test.Dotnet.csproj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
@@ -35,8 +35,8 @@
     </AssemblyAttribute>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="bin\Debug\net9.0\TestContent\Test.csproj">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    <Content Include="TestContent\Test.NetStandard.csproj">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
@@ -56,5 +56,8 @@
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="bin\" />
   </ItemGroup>
 </Project>

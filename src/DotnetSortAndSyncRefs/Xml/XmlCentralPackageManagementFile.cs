@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.IO.Abstractions;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using DotnetSortAndSyncRefs.Common;
@@ -19,7 +20,7 @@ internal class XmlCentralPackageManagementFile : XmlBaseFile
         """;
 
 
-    public XmlCentralPackageManagementFile(IFileSystem fileSystem, Reporter reporter)
+    public XmlCentralPackageManagementFile(IFileSystem fileSystem, IReporter reporter)
         : base(fileSystem, reporter)
     {
     }
@@ -50,5 +51,43 @@ internal class XmlCentralPackageManagementFile : XmlBaseFile
     protected override string GetItemGroupElements()
     {
         return ConstConfig.CentralPackageManagementElementTypes;
+    }
+
+    public void FixDoubleEntriesInItemGroup()
+    {
+        foreach (var item in ItemGroups)
+        {
+            var sortedReferences = item
+                .Elements(ConstConfig.CentralPackageManagementElementTypes)
+                .Where(x => x.Attribute(ConstConfig.Version) != null)
+                .OrderByDescending(x => (string)x.Attribute(ConstConfig.Include))
+                .ThenBy(x => (string)x.Attribute(ConstConfig.Version))
+                .ToList();
+            
+            var groupedReferences = sortedReferences.GroupBy(x => new
+            {
+                Include = (string)x.Attribute(ConstConfig.Include),
+                Version = (string)x.Attribute(ConstConfig.Version),
+
+            }).ToList();
+
+            if (sortedReferences.Count != groupedReferences.Count)
+            {
+                foreach (var xElement in sortedReferences)
+                {
+                    xElement.Remove();
+                }
+                foreach (var reference in groupedReferences)
+                {
+                    var newElement = new XElement(ConstConfig.CentralPackageManagementElementTypes);
+
+                    newElement.SetAttributeValue(ConstConfig.Include, reference.Key.Include);
+                    newElement.SetAttributeValue(ConstConfig.Version, reference.Key.Version);
+
+                    item.AddFirst(newElement);
+                }
+            }
+
+        }
     }
 }

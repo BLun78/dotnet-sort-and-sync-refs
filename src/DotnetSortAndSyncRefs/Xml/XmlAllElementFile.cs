@@ -5,7 +5,7 @@ namespace DotnetSortAndSyncRefs.Xml;
 
 internal class XmlAllElementFile : XmlBaseFile
 {
-    public XmlAllElementFile(IFileSystem fileSystem, Reporter reporter)
+    public XmlAllElementFile(IFileSystem fileSystem, IReporter reporter)
         : base(fileSystem, reporter)
     {
     }

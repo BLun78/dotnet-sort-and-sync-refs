@@ -33,7 +33,7 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
         var centralPackageManagementFile = ServiceProvider.GetRequiredService<XmlCentralPackageManagementFile>();
 
         centralPackageManagementFile.CreateCentralPackageManagementFile(Path, IsDryRun);
-        var itemGroup = centralPackageManagementFile.Document.XPathSelectElements($"//ItemGroup").First();
+        var itemGroup = centralPackageManagementFile.Document.XPathSelectElements($"//{ConstConfig.ItemGroup}").First();
 
         var dict = new Dictionary<string, XElement>
             {
@@ -41,10 +41,13 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
             };
 
         var elementsOfProjectFiles = new List<XElement>();
+        var xmlFilesToSave = new List<XmlBaseFile>();
         foreach (var projFile in FileProjects)
         {
             try
             {
+                elementsOfProjectFiles.Clear();
+
                 result = ErrorCodes.CreateCentralPackageManagementFailed;
                 var xmlProjectFile = ServiceProvider.GetRequiredService<XmlProjectFile>();
                 await xmlProjectFile.LoadFileAsync(projFile, IsDryRun).ConfigureAwait(false);
@@ -53,10 +56,10 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
 
                 // search for ItemGroup with ProjectElementTypes and for ItemGroup with ProjectElementTypes|Condition
                 var itemGroups = xmlProjectFile.Document
-                    .XPathSelectElements($"//ItemGroup[{ConstConfig.ProjectElementTypesQuery}] | //ItemGroup[{ConstConfig.Condition} and {ConstConfig.ProjectElementTypesQuery}]")
+                    .XPathSelectElements($"//{ConstConfig.ItemGroup}[{ConstConfig.ProjectElementTypesQuery}] | //{ConstConfig.ItemGroup}[{ConstConfig.Condition} and {ConstConfig.ProjectElementTypesQuery}]")
                     .ToList();
-                xmlProjectFile.CreateItemGroups(itemGroups, itemGroup, dict);
 
+                xmlProjectFile.CreateItemGroups(itemGroups, itemGroup, dict);
 
                 elementsOfProjectFiles.AddRange(itemGroups);
 
@@ -79,11 +82,9 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
                 // write file
                 if (IsNoDryRun)
                 {
-                    await xmlProjectFile
-                        .SaveAsync()
-                        .ConfigureAwait(false);
+                    xmlFilesToSave.Add(xmlProjectFile);
                 }
-                reporter.Ok($"» Updated {projFile}");
+            
                 result = ErrorCodes.Ok;
             }
             catch (Exception e)
@@ -104,6 +105,18 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
         // write file
         if (IsNoDryRun)
         {
+            centralPackageManagementFile.FixAndGroupItemGroups();
+            centralPackageManagementFile.FixDoubleEntriesInItemGroup();
+
+           
+            foreach (var xmlBaseFile in xmlFilesToSave)
+            {
+                await xmlBaseFile
+                    .SaveAsync()
+                    .ConfigureAwait(false);
+                reporter.Ok($"» Updated {xmlBaseFile.FilePath}");
+            }
+
             await centralPackageManagementFile
                 .SaveAsync()
                 .ConfigureAwait(false);

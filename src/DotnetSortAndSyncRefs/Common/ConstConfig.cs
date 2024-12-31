@@ -6,6 +6,7 @@
         public const string ProjectElementTypesQuery = @"PackageReference|Reference|GlobalPackageReference";
         public const string CentralPackageManagementElementTypes = @"PackageVersion";
         public const string Condition = @"Condition";
+        public const string Include = @"Include";
         public const string Version = @"Version";
         public const string WithOutCondition = "WithOutCondition";
         public const string ItemGroup = "ItemGroup";
