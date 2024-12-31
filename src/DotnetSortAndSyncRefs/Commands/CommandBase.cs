@@ -147,6 +147,13 @@ namespace DotnetSortAndSyncRefs.Commands
                             projFilesOk.Add(projFile);
                         }
                     }
+
+                    if (IsNoDryRun)
+                    {
+                        await xmlFile
+                            .SaveAsync()
+                            .ConfigureAwait(false);
+                    }
                 }
                 catch (Exception e)
                 {

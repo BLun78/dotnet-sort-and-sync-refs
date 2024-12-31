@@ -6,25 +6,15 @@ using System.IO.Abstractions.TestingHelpers;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using DotnetSortAndSyncRefs.Commands;
 using DotnetSortAndSyncRefs.Common;
 using DotnetSortAndSyncRefs.Test.TestContend.CommandBase.TestCommandBaseCtorOk;
 using Microsoft.Extensions.DependencyInjection;
-using NSubstitute;
 
 namespace DotnetSortAndSyncRefs.Test.Commands
 {
     [TestClass]
     public class TestCommandBase
     {
-        private class CommandBaseTest : CommandBase
-        {
-            public CommandBaseTest(IServiceProvider serviceProvider)
-                : base(serviceProvider, "CommandBaseTest")
-            {
-            }
-        }
-
         [TestMethod]
         public async Task TestCommandBaseOkAsync()
         {
@@ -33,20 +23,19 @@ namespace DotnetSortAndSyncRefs.Test.Commands
             var pathOfExecution = @"c:\execution\";
             var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
             {
-                { @"c:\solution\Directory.Packages.props", new MockFileData(MockFileStrings.GetDirectoryPackagesPropsUnsorted()) },
-                { @"c:\solution\Test.Dotnet.csproj", new MockFileData(MockFileStrings.GetTestDotnetCsprojUnsorted()) },
-                { @"c:\solution\Test.NetStandard.csproj", new MockFileData(MockFileStrings.GetTestNetStandardCsprojUnsorted()) }
+                { @"c:\solution\Directory.Packages.props", new MockFileData(MockFileStrings.GetDirectoryPackagesPropsUnsorted(), Encoding.UTF8) },
+                { @"c:\solution\Test.Dotnet.csproj", new MockFileData(MockFileStrings.GetTestDotnetCsprojUnsorted(), Encoding.UTF8) },
+                { @"c:\solution\Test.NetStandard.csproj", new MockFileData(MockFileStrings.GetTestNetStandardCsprojUnsorted(), Encoding.UTF8) }
             }, pathOfExecution);
 
             var di = new DependencyInjectionMock(fileSystem);
-            di.ServiceCollection.AddSingleton<CommandBaseTest>();
             var provider = di.CreateServiceProvider();
             var command = provider.GetRequiredService<CommandBaseTest>();
             command.Path = path;
 
             // act
             var result = await command.OnExecute();
-            
+
             // assert
             Assert.AreEqual(3, command.ProjFilesWithNonSortedReferences.Count); // result of Inspection
             Assert.AreEqual(3, command.AllFiles.Count);
@@ -64,9 +53,9 @@ namespace DotnetSortAndSyncRefs.Test.Commands
             var pathOfExecution = @"c:\execution\";
             var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
             {
-                { @"c:\solution\Directory.Packages.props", new MockFileData(MockFileStrings.GetDirectoryPackagesPropsUnsorted()) },
-                { @"c:\solution\Test.Dotnet.csproj", new MockFileData(MockFileStrings.GetTestDotnetCsprojSorted()) },
-                { @"c:\solution\Test.NetStandard.csproj", new MockFileData(MockFileStrings.GetTestNetStandardCsprojUnsorted()) }
+                { @"c:\solution\Directory.Packages.props", new MockFileData(MockFileStrings.GetDirectoryPackagesPropsUnsorted(), Encoding.UTF8) },
+                { @"c:\solution\Test.Dotnet.csproj", new MockFileData(MockFileStrings.GetTestDotnetCsprojSorted(), Encoding.UTF8) },
+                { @"c:\solution\Test.NetStandard.csproj", new MockFileData(MockFileStrings.GetTestNetStandardCsprojUnsorted(), Encoding.UTF8) }
             }, pathOfExecution);
 
             var di = new DependencyInjectionMock(fileSystem);
@@ -95,9 +84,9 @@ namespace DotnetSortAndSyncRefs.Test.Commands
             var pathOfExecution = @"c:\execution\";
             var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
             {
-                { @"c:\solution\Directory.Packages.props2", new MockFileData(MockFileStrings.GetDirectoryPackagesPropsUnsorted()) },
-                { @"c:\solution\Test.Dotnet.csproj2", new MockFileData(MockFileStrings.GetTestDotnetCsprojUnsorted()) },
-                { @"c:\solution\Test.NetStandard.csproj2", new MockFileData(MockFileStrings.GetTestNetStandardCsprojUnsorted()) }
+                { @"c:\solution\Directory.Packages.props1", new MockFileData(MockFileStrings.GetDirectoryPackagesPropsUnsorted(), Encoding.UTF8) },
+                { @"c:\solution\Test.Dotnet.csproj2", new MockFileData(MockFileStrings.GetTestDotnetCsprojUnsorted(), Encoding.UTF8) },
+                { @"c:\solution\Test.NetStandard.csproj3", new MockFileData(MockFileStrings.GetTestNetStandardCsprojUnsorted(), Encoding.UTF8) }
             }, pathOfExecution);
 
             var di = new DependencyInjectionMock(fileSystem);

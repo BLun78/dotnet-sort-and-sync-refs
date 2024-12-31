@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DotnetSortAndSyncRefs.Commands;
 using DotnetSortAndSyncRefs.Common;
+using DotnetSortAndSyncRefs.Test.Commands;
 using DotnetSortAndSyncRefs.Xml;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,6 +27,7 @@ namespace DotnetSortAndSyncRefs.Test.Mocks
                 IsQuiet = false
             });
             ServiceCollection.AddSingleton(fileSystem);
+            ServiceCollection.AddSingleton<CommandBaseTest>();
             ServiceCollection.AddXmlFiles();
             ServiceCollection.AddCommands();
         }

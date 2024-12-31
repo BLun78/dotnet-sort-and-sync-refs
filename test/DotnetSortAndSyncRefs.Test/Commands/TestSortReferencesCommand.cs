@@ -1,5 +1,6 @@
 ﻿using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
+using System.Text;
 using DotnetSortAndSyncRefs.Commands;
 using DotnetSortAndSyncRefs.Common;
 using DotnetSortAndSyncRefs.Test.Mocks;
@@ -20,9 +21,9 @@ namespace DotnetSortAndSyncRefs.Test.Commands
             var pathOfExecution = @"c:\execution\";
             var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
             {
-                { @"c:\solution\Directory.Packages.props", new MockFileData(MockFileStrings.GetDirectoryPackagesPropsUnsorted()) },
-                { @"c:\solution\Test.Dotnet.csproj", new MockFileData(MockFileStrings.GetTestDotnetCsprojUnsorted()) },
-                { @"c:\solution\Test.NetStandard.csproj", new MockFileData(MockFileStrings.GetTestNetStandardCsprojUnsorted()) }
+                { @"c:\solution\Directory.Packages.props", new MockFileData(MockFileStrings.GetDirectoryPackagesPropsUnsorted(), Encoding.UTF8) },
+                { @"c:\solution\Test.Dotnet.csproj", new MockFileData(MockFileStrings.GetTestDotnetCsprojUnsorted(), Encoding.UTF8) },
+                { @"c:\solution\Test.NetStandard.csproj", new MockFileData(MockFileStrings.GetTestNetStandardCsprojUnsorted(), Encoding.UTF8) }
             }, pathOfExecution);
 
             var di = new DependencyInjectionMock(fileSystem);
