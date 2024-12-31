@@ -47,8 +47,9 @@ namespace DotnetSortAndSyncRefs.Test.Commands
 
             // act
             var result = await command.OnExecute();
-
+            
             // assert
+            Assert.AreEqual(3, command.ProjFilesWithNonSortedReferences.Count); // result of Inspection
             Assert.AreEqual(3, command.AllFiles.Count);
             Assert.AreEqual(2, command.FileProjects.Count);
             Assert.AreEqual(1, command.FileProps.Count);

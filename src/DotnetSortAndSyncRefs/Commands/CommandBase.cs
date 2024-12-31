@@ -55,10 +55,10 @@ namespace DotnetSortAndSyncRefs.Commands
             FileSystem = serviceProvider.GetRequiredService<IFileSystem>();
             Reporter = serviceProvider.GetRequiredService<Common.IReporter>();
 
-          
+
         }
 
-        public virtual Task<int> OnExecute()
+        public virtual async Task<int> OnExecute()
         {
             Reporter.Output($"start command: {_commandStartMessage}");
 
@@ -73,7 +73,7 @@ namespace DotnetSortAndSyncRefs.Commands
                   FileSystem.Directory.Exists(Path)))
             {
                 Reporter.Error("Directory or file does not exist.");
-                return Task.FromResult(ErrorCodes.DirectoryDoNotExists);
+                return ErrorCodes.DirectoryDoNotExists;
             }
 
             AllExtensions = new List<string> { };
@@ -90,19 +90,19 @@ namespace DotnetSortAndSyncRefs.Commands
             if (AllFiles.Count == 0)
             {
                 Reporter.Error($"no '{string.Join(", ", AllExtensions)}'' files found.");
-                return Task.FromResult(ErrorCodes.FileDoNotExists);
+                return ErrorCodes.FileDoNotExists;
             }
 
             Reporter.Output("Running analysis ...");
-            ProjFilesWithNonSortedReferences = Inspect();
+            ProjFilesWithNonSortedReferences = await InspectAsync().ConfigureAwait(false);
 
             if (ProjFilesWithNonSortedReferences == null)
             {
                 Reporter.Do("Please solve the issue of the Project file(s).");
-                return Task.FromResult(ErrorCodes.ProjectFileHasNotAValidXmlFormat);
+                return ErrorCodes.ProjectFileHasNotAValidXmlFormat;
             }
 
-            return Task.FromResult(ErrorCodes.Ok);
+            return ErrorCodes.Ok;
         }
 
         public async Task<List<string>> InspectAsync()
@@ -154,12 +154,6 @@ namespace DotnetSortAndSyncRefs.Commands
             }
 
             return projFilesWithNonSortedReferences;
-        }
-
-        private List<string> Inspect()
-        {
-            return InspectAsync()
-                .ConfigureAwait(true).GetAwaiter().GetResult();
         }
 
         private List<string> LoadFilesFromExtension(IEnumerable<string> extensions)
