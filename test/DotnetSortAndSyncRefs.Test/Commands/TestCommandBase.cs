@@ -29,7 +29,6 @@ namespace DotnetSortAndSyncRefs.Test.Commands
         public async Task TestCommandBaseOkAsync()
         {
             // arrange
-            var reporter = Substitute.For<IReporter>();
             var path = @"c:\solution";
             var pathOfExecution = @"c:\execution\";
             var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
@@ -39,7 +38,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
                 { @"c:\solution\Test.NetStandard.csproj", new MockFileData(MockFileStrings.GetTestNetStandardCsprojUnsorted()) }
             }, pathOfExecution);
 
-            var di = new DependencyInjectionMock(fileSystem, reporter);
+            var di = new DependencyInjectionMock(fileSystem);
             di.ServiceCollection.AddSingleton<CommandBaseTest>();
             var provider = di.CreateServiceProvider();
             var command = provider.GetRequiredService<CommandBaseTest>();
@@ -61,7 +60,6 @@ namespace DotnetSortAndSyncRefs.Test.Commands
         public async Task TestCommandBaseOkSortedAsync()
         {
             // arrange
-            var reporter = Substitute.For<IReporter>();
             var path = @"c:\solution";
             var pathOfExecution = @"c:\execution\";
             var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
@@ -71,7 +69,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
                 { @"c:\solution\Test.NetStandard.csproj", new MockFileData(MockFileStrings.GetTestNetStandardCsprojUnsorted()) }
             }, pathOfExecution);
 
-            var di = new DependencyInjectionMock(fileSystem, reporter);
+            var di = new DependencyInjectionMock(fileSystem);
             di.ServiceCollection.AddSingleton<CommandBaseTest>();
             var provider = di.CreateServiceProvider();
             var command = provider.GetRequiredService<CommandBaseTest>();
@@ -93,7 +91,6 @@ namespace DotnetSortAndSyncRefs.Test.Commands
         public async Task TestCommandBaseFileDoNotExistsAsync()
         {
             // arrange
-            var reporter = Substitute.For<IReporter>();
             var path = @"c:\solution";
             var pathOfExecution = @"c:\execution\";
             var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
@@ -103,7 +100,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
                 { @"c:\solution\Test.NetStandard.csproj2", new MockFileData(MockFileStrings.GetTestNetStandardCsprojUnsorted()) }
             }, pathOfExecution);
 
-            var di = new DependencyInjectionMock(fileSystem, reporter);
+            var di = new DependencyInjectionMock(fileSystem);
             di.ServiceCollection.AddSingleton<CommandBaseTest>();
             var provider = di.CreateServiceProvider();
             var command = provider.GetRequiredService<CommandBaseTest>();
@@ -124,14 +121,13 @@ namespace DotnetSortAndSyncRefs.Test.Commands
         public async Task TestCommandBaseDirectoryDoNotExistsAsync()
         {
             // arrange
-            var reporter = Substitute.For<IReporter>();
             var path = @"c:\solution";
             var pathOfExecution = @"c:\execution\";
             var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
             {
             }, pathOfExecution);
 
-            var di = new DependencyInjectionMock(fileSystem, reporter);
+            var di = new DependencyInjectionMock(fileSystem);
             di.ServiceCollection.AddSingleton<CommandBaseTest>();
             var provider = di.CreateServiceProvider();
             var command = provider.GetRequiredService<CommandBaseTest>();
@@ -149,14 +145,13 @@ namespace DotnetSortAndSyncRefs.Test.Commands
         public async Task TestCommandBaseSetPathToExecutionAsync()
         {
             // arrange
-            var reporter = Substitute.For<IReporter>();
             var path = @"c:\solution";
             var pathOfExecution = @"c:\execution\";
             var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
             {
             }, pathOfExecution);
 
-            var di = new DependencyInjectionMock(fileSystem, reporter);
+            var di = new DependencyInjectionMock(fileSystem);
             di.ServiceCollection.AddSingleton<CommandBaseTest>();
             var provider = di.CreateServiceProvider();
             var command = provider.GetRequiredService<CommandBaseTest>();

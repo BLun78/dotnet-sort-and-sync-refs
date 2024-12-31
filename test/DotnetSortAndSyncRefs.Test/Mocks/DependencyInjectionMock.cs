@@ -9,7 +9,6 @@ using DotnetSortAndSyncRefs.Commands;
 using DotnetSortAndSyncRefs.Common;
 using DotnetSortAndSyncRefs.Xml;
 using Microsoft.Extensions.DependencyInjection;
-using NSubstitute;
 
 namespace DotnetSortAndSyncRefs.Test.Mocks
 {
@@ -17,11 +16,15 @@ namespace DotnetSortAndSyncRefs.Test.Mocks
     {
         public IServiceCollection ServiceCollection { get; private set; }
 
-        public DependencyInjectionMock(IFileSystem fileSystem, IReporter reporter)
+        public DependencyInjectionMock(IFileSystem fileSystem)
         {
             ServiceCollection = new ServiceCollection();
 
-            ServiceCollection.AddSingleton(reporter);
+            ServiceCollection.AddSingleton<IReporter>((sp) => new MockReporter
+            {
+                IsVerbose = false,
+                IsQuiet = false
+            });
             ServiceCollection.AddSingleton(fileSystem);
             ServiceCollection.AddXmlFiles();
             ServiceCollection.AddCommands();

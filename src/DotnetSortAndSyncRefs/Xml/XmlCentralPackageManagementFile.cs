@@ -27,7 +27,10 @@ internal class XmlCentralPackageManagementFile : XmlBaseFile
 
     public void CreateCentralPackageManagementFile(string path, bool isDryRun)
     {
-        FilePath = FileSystem.Path.Combine(path, @"Directory.Packages.props");
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            FilePath = FileSystem.Path.Combine(path, @"Directory.Packages.props");
+        }
         BackupFilePath = $"{FilePath}.backup";
         IsNoDryRun = !isDryRun;
 
