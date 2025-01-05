@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DotnetSortAndSyncRefs.Common;
-using DotnetSortAndSyncRefs.Test.TestContend.CommandBase.TestCommandBaseCtorOk;
+using DotnetSortAndSyncRefs.Test.TestContend.CommandBase;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DotnetSortAndSyncRefs.Test.Commands

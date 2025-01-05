@@ -13,13 +13,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="TestContend\CommandBase\TestCommandBaseCtorOk\Directory.Packages.props">
+    <Content Include="TestContend\CommandBase\Directory.Packages.props">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestContend\CommandBase\TestCommandBaseCtorOk\Test.Dotnet.csproj">
+    <Content Include="TestContend\CommandBase\Test.Dotnet.csproj">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestContend\CommandBase\TestCommandBaseCtorOk\Test.NetStandard.csproj">
+    <Content Include="TestContend\CommandBase\Test.NetStandard.csproj">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

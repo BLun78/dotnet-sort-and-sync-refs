@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DotnetSortAndSyncRefs.Test.TestContend.CommandBase.TestCommandBaseCtorOk
+﻿namespace DotnetSortAndSyncRefs.Test.TestContend.CommandBase
 {
     internal static class MockFileStrings
     {

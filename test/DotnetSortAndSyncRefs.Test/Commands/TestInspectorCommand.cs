@@ -1,5 +1,4 @@
 ﻿using DotnetSortAndSyncRefs.Test.Mocks;
-using DotnetSortAndSyncRefs.Test.TestContend.CommandBase.TestCommandBaseCtorOk;
 using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
@@ -9,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DotnetSortAndSyncRefs.Commands;
 using DotnetSortAndSyncRefs.Common;
+using DotnetSortAndSyncRefs.Test.TestContend.CommandBase;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DotnetSortAndSyncRefs.Test.Commands

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using DotnetSortAndSyncRefs.Commands;
 using DotnetSortAndSyncRefs.Common;
 using DotnetSortAndSyncRefs.Test.Mocks;
-using DotnetSortAndSyncRefs.Test.TestContend.CommandBase.TestCommandBaseCtorOk;
+using DotnetSortAndSyncRefs.Test.TestContend.CommandBase;
 using DotnetSortAndSyncRefs.Xml;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;

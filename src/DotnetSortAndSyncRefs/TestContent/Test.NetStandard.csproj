@@ -8,7 +8,7 @@
     <AssemblyName>dotnet-sort-and-sync-refs</AssemblyName>
     <PackageId>dotnet-sort-and-sync-refs</PackageId>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <PackageProjectUrl>https://github.com/mysticmind/dotnet-sort-refs</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/BLun78/dotnet-sort-and-sync-refs</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <IsPackable>true</IsPackable>
     <PackAsTool>true</PackAsTool>
