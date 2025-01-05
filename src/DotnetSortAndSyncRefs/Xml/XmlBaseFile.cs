@@ -1,4 +1,6 @@
-﻿using System;
+﻿using DotnetSortAndSyncRefs.Common;
+using DotnetSortAndSyncRefs.Models;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
@@ -7,8 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.XPath;
-using DotnetSortAndSyncRefs.Common;
-using DotnetSortAndSyncRefs.Models;
 
 namespace DotnetSortAndSyncRefs.Xml;
 
@@ -18,7 +18,7 @@ internal abstract class XmlBaseFile
     protected readonly IReporter Reporter;
     protected bool IsNoDryRun;
     protected bool DoBackup;
-    
+
     protected XmlBaseFile(
         IFileSystem fileSystem,
         IReporter reporter)
@@ -111,10 +111,10 @@ internal abstract class XmlBaseFile
 
     public Task<int> LoadFileAsync(string filePath, bool isDryRun, CancellationToken cancellationToken = default)
     {
-        return LoadFileAsync(filePath, isDryRun, true, cancellationToken);
+        return LoadFileAsync(filePath, isDryRun, true, true, cancellationToken);
     }
 
-    public async Task<int> LoadFileAsync(string filePath, bool isDryRun, bool doBackup, CancellationToken cancellationToken = default)
+    public async Task<int> LoadFileAsync(string filePath, bool isDryRun, bool doBackup, bool doOptimizeItemGroups, CancellationToken cancellationToken = default)
     {
         FilePath = filePath;
         BackupFilePath = $"{filePath}.backup";
@@ -137,12 +137,23 @@ internal abstract class XmlBaseFile
                     FileSystem.File.Copy(FilePath, BackupFilePath, true);
                 }
             }
+
+            if (doOptimizeItemGroups)
+            {
+                FixAndGroupItemGroups();
+                FixDoubleEntriesInItemGroup();
+            }
         }
 
         return ErrorCodes.Ok;
     }
 
-    public async Task<int> LoadFileReadOnlyAsync(string filePath, CancellationToken cancellationToken = default)
+    public Task<int> LoadFileReadOnlyAsync(string filePath, CancellationToken cancellationToken = default)
+    {
+        return LoadFileReadOnlyAsync(filePath, true, cancellationToken);
+    }
+
+    public async Task<int> LoadFileReadOnlyAsync(string filePath, bool doOptimizeItemGroups, CancellationToken cancellationToken = default)
     {
         FilePath = filePath;
         BackupFilePath = $"{filePath}.backup";
@@ -156,16 +167,22 @@ internal abstract class XmlBaseFile
                 .ReadAllTextAsync(FilePath, cancellationToken)
                 .ConfigureAwait(false);
             Document = XDocument.Parse(xmlFile);
+
+            if (doOptimizeItemGroups)
+            {
+                FixAndGroupItemGroups();
+                FixDoubleEntriesInItemGroup();
+            }
         }
 
         return ErrorCodes.Ok;
     }
 
-    public async Task SaveAsync(CancellationToken cancellationToken = default)
+    public virtual async Task SaveAsync(CancellationToken cancellationToken = default)
     {
         if (Document != null && IsNoDryRun)
         {
-            
+
             await using Stream fileStream = FileSystem.FileStream.New(FilePath, FileMode);
 
             await fileStream
@@ -192,7 +209,7 @@ internal abstract class XmlBaseFile
 
     }
 
-    public void FixAndGroupItemGroups()
+    protected void FixAndGroupItemGroups()
     {
 
         foreach (var item in ItemGroupsConditionGrouped)
@@ -212,6 +229,44 @@ internal abstract class XmlBaseFile
                 }
                 group.Remove();
             }
+        }
+    }
+
+    protected void FixDoubleEntriesInItemGroup()
+    {
+        foreach (var item in ItemGroups)
+        {
+            var sortedReferences = item
+                .Elements(ConstConfig.CentralPackageManagementElementTypes)
+                .Where(x => x.Attribute(ConstConfig.Version) != null)
+                .OrderByDescending(x => (string)x.Attribute(ConstConfig.Include))
+                .ThenBy(x => (string)x.Attribute(ConstConfig.Version))
+                .ToList();
+
+            var groupedReferences = sortedReferences.GroupBy(x => new
+            {
+                Include = (string)x.Attribute(ConstConfig.Include),
+                Version = (string)x.Attribute(ConstConfig.Version),
+
+            }).ToList();
+
+            if (sortedReferences.Count != groupedReferences.Count)
+            {
+                foreach (var xElement in sortedReferences)
+                {
+                    xElement.Remove();
+                }
+                foreach (var reference in groupedReferences)
+                {
+                    var newElement = new XElement(ConstConfig.CentralPackageManagementElementTypes);
+
+                    newElement.SetAttributeValue(ConstConfig.Include, reference.Key.Include);
+                    newElement.SetAttributeValue(ConstConfig.Version, reference.Key.Version);
+
+                    item.AddFirst(newElement);
+                }
+            }
+
         }
     }
 

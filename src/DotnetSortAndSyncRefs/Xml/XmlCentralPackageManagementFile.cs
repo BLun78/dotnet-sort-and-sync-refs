@@ -1,9 +1,9 @@
-﻿using System.IO;
+﻿using DotnetSortAndSyncRefs.Common;
+using System.IO;
 using System.IO.Abstractions;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using DotnetSortAndSyncRefs.Common;
 
 namespace DotnetSortAndSyncRefs.Xml;
 
@@ -56,41 +56,12 @@ internal class XmlCentralPackageManagementFile : XmlBaseFile
         return ConstConfig.CentralPackageManagementElementTypes;
     }
 
-    public void FixDoubleEntriesInItemGroup()
+    public override Task SaveAsync(CancellationToken cancellationToken = default)
     {
-        foreach (var item in ItemGroups)
-        {
-            var sortedReferences = item
-                .Elements(ConstConfig.CentralPackageManagementElementTypes)
-                .Where(x => x.Attribute(ConstConfig.Version) != null)
-                .OrderByDescending(x => (string)x.Attribute(ConstConfig.Include))
-                .ThenBy(x => (string)x.Attribute(ConstConfig.Version))
-                .ToList();
-            
-            var groupedReferences = sortedReferences.GroupBy(x => new
-            {
-                Include = (string)x.Attribute(ConstConfig.Include),
-                Version = (string)x.Attribute(ConstConfig.Version),
 
-            }).ToList();
+        FixAndGroupItemGroups();
+        FixDoubleEntriesInItemGroup();
 
-            if (sortedReferences.Count != groupedReferences.Count)
-            {
-                foreach (var xElement in sortedReferences)
-                {
-                    xElement.Remove();
-                }
-                foreach (var reference in groupedReferences)
-                {
-                    var newElement = new XElement(ConstConfig.CentralPackageManagementElementTypes);
-
-                    newElement.SetAttributeValue(ConstConfig.Include, reference.Key.Include);
-                    newElement.SetAttributeValue(ConstConfig.Version, reference.Key.Version);
-
-                    item.AddFirst(newElement);
-                }
-            }
-
-        }
+        return base.SaveAsync(cancellationToken);
     }
 }

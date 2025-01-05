@@ -67,10 +67,9 @@ internal partial class DotnetUpgradeCommand : SyncPackages, ICommandBase
             {
                 var xmlAllElementFile = ServiceProvider.GetRequiredService<XmlAllElementFile>();
                 await xmlAllElementFile
-                    .LoadFileAsync(projFile, IsDryRun, false)
+                    .LoadFileAsync(projFile, IsDryRun)
                     .ConfigureAwait(false);
 
-                xmlAllElementFile.FixAndGroupItemGroups();
                 SetFrameworks(xmlAllElementFile.TargetFrameworks);
                 DuplicateItemGroupsWithFrameworkCondition(xmlAllElementFile);
 

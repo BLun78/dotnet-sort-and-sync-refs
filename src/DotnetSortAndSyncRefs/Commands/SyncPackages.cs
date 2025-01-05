@@ -38,8 +38,6 @@ namespace DotnetSortAndSyncRefs.Commands
                     .LoadFileAsync(projFile, IsDryRun)
                     .ConfigureAwait(false);
 
-                xmlProjectFile.FixAndGroupItemGroups();
-
                 if (IsNoDryRun)
                 {
                     await xmlProjectFile
@@ -70,8 +68,6 @@ namespace DotnetSortAndSyncRefs.Commands
                 await xmlCentralPackageManagementFile
                     .LoadFileAsync(propsFile, IsDryRun)
                     .ConfigureAwait(false);
-
-                xmlCentralPackageManagementFile.FixAndGroupItemGroups();
 
                 if (IsNoDryRun)
                 {

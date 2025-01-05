@@ -1,20 +1,20 @@
-﻿using System;
+﻿using DotnetSortAndSyncRefs.Common;
+using DotnetSortAndSyncRefs.Xml;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.XPath;
 using System.Xml.Xsl;
-using DotnetSortAndSyncRefs.Common;
-using DotnetSortAndSyncRefs.Xml;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace DotnetSortAndSyncRefs.Commands;
 
 internal abstract class SortReferences : CommandBase, ICommandBase
 {
     protected SortReferences(
-        IServiceProvider serviceProvider, 
+        IServiceProvider serviceProvider,
         string commandStartMessage
     ) : base(serviceProvider, commandStartMessage)
     {
@@ -31,10 +31,10 @@ internal abstract class SortReferences : CommandBase, ICommandBase
         return await SortReferencesAsync(result);
     }
 
-    public async Task<int> SortReferencesAsync(int result )
+    public async Task<int> SortReferencesAsync(int result)
     {
         Reporter.Output("Running sort package references ...");
-      
+
         var xslt = GetXslTransform();
 
         foreach (var projFile in AllFiles)
@@ -43,8 +43,9 @@ internal abstract class SortReferences : CommandBase, ICommandBase
             {
                 await using var sw = new StringWriter();
                 var xmlAllElementFile = ServiceProvider.GetRequiredService<XmlAllElementFile>();
+
                 await xmlAllElementFile
-                    .LoadFileAsync(projFile, IsDryRun, false)
+                    .LoadFileAsync(projFile, IsDryRun, false, true)
                     .ConfigureAwait(false);
 
                 xslt.Transform(xmlAllElementFile.Document.CreateNavigator(), null, sw);

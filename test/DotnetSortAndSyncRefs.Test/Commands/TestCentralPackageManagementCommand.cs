@@ -2,14 +2,10 @@
 using DotnetSortAndSyncRefs.Common;
 using DotnetSortAndSyncRefs.Test.Mocks;
 using DotnetSortAndSyncRefs.Test.TestContend.CommandBase.TestCommandBaseCtorOk;
-using System;
-using System.Collections.Generic;
-using System.IO.Abstractions;
-using System.IO.Abstractions.TestingHelpers;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using DotnetSortAndSyncRefs.Xml;
 using Microsoft.Extensions.DependencyInjection;
+using System.IO.Abstractions.TestingHelpers;
+using System.Text;
 
 namespace DotnetSortAndSyncRefs.Test.Commands
 {
@@ -22,6 +18,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
             // arrange
             var path = @"c:\solution";
             var pathOfExecution = @"c:\execution\";
+            var pathOfResultFile = @"c:\solution\Directory.Packages.props";
             var mockOption = new MockFileSystemOptions()
             {
                 CurrentDirectory = pathOfExecution,
@@ -37,6 +34,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
             var di = new DependencyInjectionMock(fileSystem);
             var provider = di.CreateServiceProvider();
             var command = provider.GetRequiredService<CentralPackageManagementCommand>();
+            var xmlResultFile = provider.GetRequiredService<XmlCentralPackageManagementFile>();
             command.Path = path;
 
             // act
@@ -48,8 +46,11 @@ namespace DotnetSortAndSyncRefs.Test.Commands
             Assert.AreEqual(2, command.FileProjects.Count);
             Assert.AreEqual(0, command.FileProps.Count);
             Assert.AreEqual(path, command.Path);
-            Assert.IsTrue(fileSystem.FileExists(@"c:\solution\Directory.Packages.props"));
             Assert.AreEqual(ErrorCodes.Ok, result);
+            Assert.IsTrue(fileSystem.FileExists(pathOfResultFile));
+
+            await xmlResultFile.LoadFileAsync(pathOfResultFile, false, false, false);
+            Assert.AreEqual(3, xmlResultFile.ItemGroups.ToList().Count);
         }
     }
 }

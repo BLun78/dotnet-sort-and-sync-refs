@@ -58,8 +58,6 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
                 var xmlProjectFile = ServiceProvider.GetRequiredService<XmlProjectFile>();
                 await xmlProjectFile.LoadFileAsync(projFile, IsDryRun).ConfigureAwait(false);
 
-                xmlProjectFile.FixAndGroupItemGroups();
-
                 // search for ItemGroup with ProjectElementTypes and for ItemGroup with ProjectElementTypes|Condition
                 var itemGroups = xmlProjectFile.Document
                     .XPathSelectElements($"//{ConstConfig.ItemGroup}[{ConstConfig.ProjectElementTypesQuery}] | //{ConstConfig.ItemGroup}[{ConstConfig.Condition} and {ConstConfig.ProjectElementTypesQuery}]")
@@ -111,10 +109,6 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
         // write file
         if (IsNoDryRun)
         {
-            centralPackageManagementFile.FixAndGroupItemGroups();
-            centralPackageManagementFile.FixDoubleEntriesInItemGroup();
-
-           
             foreach (var xmlBaseFile in xmlFilesToSave)
             {
                 await xmlBaseFile

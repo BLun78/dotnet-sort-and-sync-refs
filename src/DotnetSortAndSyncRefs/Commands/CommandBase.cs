@@ -116,10 +116,8 @@ namespace DotnetSortAndSyncRefs.Commands
                 {
                     var xmlFile = ServiceProvider.GetRequiredService<XmlAllElementFile>();
                     await xmlFile
-                        .LoadFileReadOnlyAsync(projFile)
+                        .LoadFileReadOnlyAsync(projFile, false)
                         .ConfigureAwait(false);
-
-                    xmlFile.FixAndGroupItemGroups();
 
                     foreach (var itemGroup in xmlFile.ItemGroups)
                     {
