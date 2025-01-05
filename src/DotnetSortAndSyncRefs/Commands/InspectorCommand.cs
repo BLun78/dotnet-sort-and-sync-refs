@@ -24,12 +24,13 @@ namespace DotnetSortAndSyncRefs.Commands
 
         public override async Task<int> OnExecute()
         {
-            Reporter.Output("Running inspection ...");
             var result = await base.OnExecute().ConfigureAwait(false);
             if (result != ErrorCodes.Ok)
             {
                 return result;
             }
+
+            Reporter.Output("Running inspection ...");
 
             PrintInspectionResults(AllFiles, ProjFilesWithNonSortedReferences);
 

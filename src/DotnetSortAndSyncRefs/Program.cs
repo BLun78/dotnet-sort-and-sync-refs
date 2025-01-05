@@ -33,7 +33,6 @@ namespace DotnetSortAndSyncRefs
     [Subcommand(typeof(DotnetUpgradeCommand))]
     internal class Program
     {
-
         static async Task<int> Main(string[] args)
         {
             var provider = new ServiceCollection()

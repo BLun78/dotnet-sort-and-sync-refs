@@ -19,6 +19,8 @@ namespace DotnetSortAndSyncRefs.Test.Commands
             var path = @"c:\solution";
             var pathOfExecution = @"c:\execution\";
             var pathOfResultFile = @"c:\solution\Directory.Packages.props";
+            var pathOfInputFile1 = @"c:\solution\Test.Dotnet.csproj";
+            var pathOfInputFile2 = @"c:\solution\Test.NetStandard.csproj";
             var mockOption = new MockFileSystemOptions()
             {
                 CurrentDirectory = pathOfExecution,
@@ -26,16 +28,24 @@ namespace DotnetSortAndSyncRefs.Test.Commands
             };
             var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
             {
-                //{ @"c:\solution\Directory.Packages.props", new MockFileData(MockFileStrings.GetDirectoryPackagesPropsUnsorted(), Encoding.UTF8) },
-                { @"c:\solution\Test.Dotnet.csproj", new MockFileData(MockFileStrings.GetTestDotnetCsprojUnsorted(), Encoding.UTF8) },
-                { @"c:\solution\Test.NetStandard.csproj", new MockFileData(MockFileStrings.GetTestNetStandardCsprojUnsorted(), Encoding.UTF8) }
+                { pathOfInputFile1, new MockFileData(MockFileStrings.GetTestDotnetCsprojUnsorted(), Encoding.UTF8) },
+                { pathOfInputFile2, new MockFileData(MockFileStrings.GetTestNetStandardCsprojUnsorted(), Encoding.UTF8) }
             }, mockOption);
 
             var di = new DependencyInjectionMock(fileSystem);
             var provider = di.CreateServiceProvider();
+            var reporter = provider.GetRequiredService<IReporter>();
             var command = provider.GetRequiredService<CentralPackageManagementCommand>();
-            var xmlResultFile = provider.GetRequiredService<XmlCentralPackageManagementFile>();
+            var xmlInputFile1 = provider.GetRequiredService<XmlAllElementFile>();
+            await xmlInputFile1.LoadFileAsync(pathOfInputFile1, false, false, false);
+            var xmlInputFile2 = provider.GetRequiredService<XmlAllElementFile>();
+            await xmlInputFile2.LoadFileAsync(pathOfInputFile1, false, false, false);
+            var xmlResultFileResult = provider.GetRequiredService<XmlAllElementFile>();
             command.Path = path;
+            reporter.Output("Input File 1:");
+            reporter.Output(xmlInputFile1.ToString());
+            reporter.Output("Input File 2:");
+            reporter.Output(xmlInputFile2.ToString());
 
             // act
             var result = await command.OnExecute();
@@ -49,8 +59,10 @@ namespace DotnetSortAndSyncRefs.Test.Commands
             Assert.AreEqual(ErrorCodes.Ok, result);
             Assert.IsTrue(fileSystem.FileExists(pathOfResultFile));
 
-            await xmlResultFile.LoadFileAsync(pathOfResultFile, false, false, false);
-            Assert.AreEqual(3, xmlResultFile.ItemGroups.ToList().Count);
+            await xmlResultFileResult.LoadFileAsync(pathOfResultFile, false, false, false);
+            Assert.AreEqual(3, xmlResultFileResult.ItemGroups.ToList().Count);
+            reporter.Output("Result File:");
+            reporter.Output(xmlResultFileResult.ToString());
         }
     }
 }

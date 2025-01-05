@@ -336,4 +336,9 @@ internal abstract class XmlBaseFile
 
     protected abstract string GetItemGroupElements();
 
+    public override string ToString()
+    {
+        var result = Document.ToString(SaveOptions.None);
+        return result ?? base.ToString();
+    }
 }

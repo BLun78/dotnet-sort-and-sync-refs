@@ -1,12 +1,12 @@
-﻿using System;
+﻿using DotnetSortAndSyncRefs.Common;
+using DotnetSortAndSyncRefs.Extensions;
+using DotnetSortAndSyncRefs.Xml;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using DotnetSortAndSyncRefs.Common;
-using DotnetSortAndSyncRefs.Extensions;
-using DotnetSortAndSyncRefs.Xml;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace DotnetSortAndSyncRefs.Commands
 {
@@ -21,12 +21,13 @@ namespace DotnetSortAndSyncRefs.Commands
 
         public override async Task<int> OnExecute()
         {
-            Reporter.Output("Running sync package references ...");
             var result = await base.OnExecute().ConfigureAwait(false);
             if (result != ErrorCodes.Ok)
             {
                 return result;
             }
+
+            Reporter.Output("Running sync package references ...");
 
             // collect Project references
             var elementsOfProjectFiles = new List<XElement>();

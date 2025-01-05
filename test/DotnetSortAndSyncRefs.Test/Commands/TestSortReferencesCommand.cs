@@ -10,7 +10,9 @@ using DotnetSortAndSyncRefs.Common;
 using DotnetSortAndSyncRefs.Test.Mocks;
 using DotnetSortAndSyncRefs.Test.TestContend.CommandBase.TestCommandBaseCtorOk;
 using DotnetSortAndSyncRefs.Xml;
+using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
+using IReporter = DotnetSortAndSyncRefs.Common.IReporter;
 
 namespace DotnetSortAndSyncRefs.Test.Commands
 {
@@ -34,8 +36,13 @@ namespace DotnetSortAndSyncRefs.Test.Commands
             var di = new DependencyInjectionMock(fileSystem);
             var provider = di.CreateServiceProvider();
             var command = provider.GetRequiredService<SortReferencesCommand>();
-            var xmlResultFile = provider.GetRequiredService<XmlAllElementFile>();
+            var reporter = provider.GetRequiredService<IReporter>();
+            var xmlResultFileBefor = provider.GetRequiredService<XmlAllElementFile>();
+            await xmlResultFileBefor.LoadFileAsync(pathOfResultFile, false, false, false);
+            var xmlResultFileResult = provider.GetRequiredService<XmlAllElementFile>();
             command.Path = path;
+            reporter.Output("Input File:");
+            reporter.Output(xmlResultFileBefor.ToString());
 
             // act
             var result = await command.OnExecute();
@@ -50,8 +57,10 @@ namespace DotnetSortAndSyncRefs.Test.Commands
 
             Assert.IsTrue(fileSystem.FileExists(pathOfResultFile));
 
-            await xmlResultFile.LoadFileAsync(pathOfResultFile, false, false,false);
-            Assert.AreEqual(3, xmlResultFile.ItemGroups.ToList().Count);
+            await xmlResultFileResult.LoadFileAsync(pathOfResultFile, false, false,false);
+            Assert.AreEqual(3, xmlResultFileResult.ItemGroups.ToList().Count);
+            reporter.Output("Result File:");
+            reporter.Output(xmlResultFileResult.ToString());
         }
     }
 

@@ -23,12 +23,13 @@ namespace DotnetSortAndSyncRefs.Commands
 
         public override async Task<int> OnExecute()
         {
-            Reporter.Output("Running nuget update package references ...");
             var result = await base.OnExecute().ConfigureAwait(false);
             if (result != ErrorCodes.Ok)
             {
                 return result;
             }
+
+            Reporter.Output("Running nuget update package references ...");
 
             throw new NotImplementedException();
         }

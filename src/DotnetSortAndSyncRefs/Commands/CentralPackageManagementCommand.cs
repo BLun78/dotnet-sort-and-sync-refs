@@ -27,12 +27,13 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
 
     public override async Task<int> OnExecute()
     {
-        Reporter.Output("Running create central package management for package references ...");
         var result = await base.OnExecute().ConfigureAwait(false);
         if (result != ErrorCodes.Ok)
         {
             return result;
         }
+
+        Reporter.Output("Running create central package management for package references ...");
 
         var error = false;
         var reporter = ServiceProvider.GetRequiredService<Common.IReporter>();
