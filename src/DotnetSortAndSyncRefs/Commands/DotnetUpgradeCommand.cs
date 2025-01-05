@@ -47,7 +47,12 @@ internal partial class DotnetUpgradeCommand : SyncPackages, ICommandBase
 
     public override async Task<int> OnExecute()
     {
-        var result = ErrorCodes.CriticalError;
+        Reporter.Output("Running dotnet upgrade ...");
+        var result = await base.OnExecute().ConfigureAwait(false);
+        if (result != ErrorCodes.Ok)
+        {
+            return result;
+        }
 
         var xmlCentralPackageManagementFile = ServiceProvider.GetRequiredService<XmlCentralPackageManagementFile>();
         var cpm = FileProps.First(x => x.Contains(CentralPackageManagementFile));

@@ -22,7 +22,11 @@ namespace DotnetSortAndSyncRefs.Commands
         public override async Task<int> OnExecute()
         {
             Reporter.Output("Running sync package references ...");
-            var result = ErrorCodes.SyncPackagesFailed;
+            var result = await base.OnExecute().ConfigureAwait(false);
+            if (result != ErrorCodes.Ok)
+            {
+                return result;
+            }
 
             // collect Project references
             var elementsOfProjectFiles = new List<XElement>();
@@ -114,8 +118,7 @@ namespace DotnetSortAndSyncRefs.Commands
 
             if (result == ErrorCodes.Ok)
             {
-                return await base
-                    .OnExecute()
+                return await base.SortReferencesAsync(result)
                     .ConfigureAwait(false);
             }
 

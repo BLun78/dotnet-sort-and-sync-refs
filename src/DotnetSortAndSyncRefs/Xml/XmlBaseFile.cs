@@ -165,7 +165,8 @@ internal abstract class XmlBaseFile
     {
         if (Document != null && IsNoDryRun)
         {
-            await using Stream fileStream = new FileStream(FilePath, FileMode);
+            
+            await using Stream fileStream = FileSystem.FileStream.New(FilePath, FileMode);
 
             await fileStream
                 .FlushAsync(cancellationToken)

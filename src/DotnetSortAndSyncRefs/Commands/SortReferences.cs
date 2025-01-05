@@ -22,13 +22,19 @@ internal abstract class SortReferences : CommandBase, ICommandBase
 
     public override async Task<int> OnExecute()
     {
-        var result = await base.OnExecute();
+        var result = await base.OnExecute().ConfigureAwait(false);
         if (result != ErrorCodes.Ok)
         {
             return result;
         }
 
+        return await SortReferencesAsync(result);
+    }
+
+    public async Task<int> SortReferencesAsync(int result )
+    {
         Reporter.Output("Running sort package references ...");
+      
         var xslt = GetXslTransform();
 
         foreach (var projFile in AllFiles)
