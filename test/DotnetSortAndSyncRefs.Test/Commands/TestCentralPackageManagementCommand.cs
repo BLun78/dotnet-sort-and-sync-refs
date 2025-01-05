@@ -2,8 +2,13 @@
 using DotnetSortAndSyncRefs.Common;
 using DotnetSortAndSyncRefs.Test.Mocks;
 using DotnetSortAndSyncRefs.Test.TestContend.CommandBase.TestCommandBaseCtorOk;
+using System;
+using System.Collections.Generic;
+using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DotnetSortAndSyncRefs.Test.Commands
@@ -12,7 +17,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
     public class TestCentralPackageManagementCommand
     {
         [TestMethod]
-        public async Task TestCentralPackageManagementCommandOk()
+        public async Task Test_CentralPackageManagementCommand_Ok()
         {
             // arrange
             var path = @"c:\solution";

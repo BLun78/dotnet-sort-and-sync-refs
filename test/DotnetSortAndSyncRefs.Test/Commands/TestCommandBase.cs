@@ -16,7 +16,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
     public class TestCommandBase
     {
         [TestMethod]
-        public async Task TestCommandBaseOkAsync()
+        public async Task Test_CommandBase_Ok()
         {
             // arrange
             var path = @"c:\solution";
@@ -46,7 +46,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
         }
 
         [TestMethod]
-        public async Task TestCommandBaseOkSortedAsync()
+        public async Task Test_CommandBase_Ok_Sorted()
         {
             // arrange
             var path = @"c:\solution";
@@ -77,7 +77,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
         }
 
         [TestMethod]
-        public async Task TestCommandBaseFileDoNotExistsAsync()
+        public async Task Test_CommandBase_FileDoNotExists()
         {
             // arrange
             var path = @"c:\solution";
@@ -107,7 +107,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
         }
 
         [TestMethod]
-        public async Task TestCommandBaseDirectoryDoNotExistsAsync()
+        public async Task Test_CommandBase_DirectoryDoNotExists()
         {
             // arrange
             var path = @"c:\solution";
@@ -131,7 +131,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
         }
 
         [TestMethod]
-        public async Task TestCommandBaseSetPathToExecutionAsync()
+        public async Task Test_CommandBase_SetPathToExecution_Ok()
         {
             // arrange
             var path = @"c:\solution";

@@ -1,12 +1,15 @@
-﻿using System.IO.Abstractions;
+﻿using System;
+using System.Collections.Generic;
+using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using DotnetSortAndSyncRefs.Commands;
 using DotnetSortAndSyncRefs.Common;
 using DotnetSortAndSyncRefs.Test.Mocks;
 using DotnetSortAndSyncRefs.Test.TestContend.CommandBase.TestCommandBaseCtorOk;
 using Microsoft.Extensions.DependencyInjection;
-using NSubstitute;
 
 namespace DotnetSortAndSyncRefs.Test.Commands
 {
@@ -14,7 +17,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
     public sealed class TestSortReferencesCommand
     {
         [TestMethod]
-        public async Task TestSortReferencesOkCommand()
+        public async Task Test_SortReferencesCommand_Ok()
         {
             // arrange
             var path = @"c:\solution";

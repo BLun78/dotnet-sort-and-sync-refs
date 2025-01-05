@@ -2,6 +2,7 @@
 using DotnetSortAndSyncRefs.Test.TestContend.CommandBase.TestCommandBaseCtorOk;
 using System;
 using System.Collections.Generic;
+using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using System.Linq;
 using System.Text;
@@ -16,7 +17,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
     public class TestInspectorCommand
     {
         [TestMethod]
-        public async Task TestInspectorCommandOk()
+        public async Task Test_InspectorCommand_Ok()
         {
             // arrange
             var path = @"c:\solution";
