@@ -1,5 +1,7 @@
 ﻿using DotnetSortAndSyncRefs.Common;
+using DotnetSortAndSyncRefs.Extensions;
 using DotnetSortAndSyncRefs.Models;
+using NuGet.Versioning;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -237,7 +239,7 @@ internal abstract class XmlBaseFile
         foreach (var item in ItemGroups)
         {
             var sortedReferences = item
-                .Elements(ConstConfig.CentralPackageManagementElementTypes)
+                .Elements(ConstConfig.PackageVersion)
                 .Where(x => x.Attribute(ConstConfig.Version) != null)
                 .OrderByDescending(x => (string)x.Attribute(ConstConfig.Include))
                 .ThenBy(x => (string)x.Attribute(ConstConfig.Version))
@@ -258,7 +260,7 @@ internal abstract class XmlBaseFile
                 }
                 foreach (var reference in groupedReferences)
                 {
-                    var newElement = new XElement(ConstConfig.CentralPackageManagementElementTypes);
+                    var newElement = new XElement(ConstConfig.PackageVersion);
 
                     newElement.SetAttributeValue(ConstConfig.Include, reference.Key.Include);
                     newElement.SetAttributeValue(ConstConfig.Version, reference.Key.Version);
@@ -287,17 +289,69 @@ internal abstract class XmlBaseFile
         attribute?.Remove();
     }
 
-    public void CreateItemGroups(IEnumerable<XElement> itemGroups, XElement itemGroup, Dictionary<string, XElement> dict)
+    public void UpdateItemGroups(IEnumerable<XElement> itemGroups, IEnumerable<XElement> originItemGroups)
     {
+        foreach (var element in itemGroups)
+        {
+            var sortedReferences = element.GetPackageReferenceElementsWithVersionSorted();
+
+            if (sortedReferences.Any())
+            {
+                var condition = GetCondition(element);
+                var itemGroup = (originItemGroups)
+                    .SingleOrDefault(x => x.Attribute(ConstConfig.Condition)?.Value == condition);
+
+                foreach (var reference in sortedReferences)
+                {
+                    var include = reference.Attribute(ConstConfig.Include)?.Value;
+                    var newVersion = reference.Attribute(ConstConfig.Version)!.Value;
+
+                    var newElement = itemGroup
+                        .Elements(ConstConfig.PackageVersion)?
+                        .SingleOrDefault(x => x.Attribute(ConstConfig.Include)?.Value == include);
+
+                    if (newElement == null)
+                    {
+                        newElement = new XElement(ConstConfig.PackageVersion);
+                        newElement.SetAttributeValue(ConstConfig.Include, include);
+                        itemGroup.Add(newElement);
+                    }
+
+                    var version = string.Empty;
+                    var oldVersion = newElement.Attribute(ConstConfig.Version)?.Value;
+                    if (!string.IsNullOrWhiteSpace(oldVersion))
+                    {
+                        var nugetVersion = new NuGetVersion(newVersion);
+                        var oldNugetVersion = new NuGetVersion(oldVersion);
+                        version = nugetVersion > oldNugetVersion
+                            ? newVersion
+                            : oldVersion;
+                    }
+                    else
+                    {
+                        version = newVersion;
+                    }
+
+                    newElement.SetAttributeValue(ConstConfig.Version, version);
+                }
+            }
+        }
+    }
+
+    public void CreateItemGroups(IEnumerable<XElement> itemGroups, IEnumerable<XElement> originItemGroups)
+    {
+        var itemGroup = originItemGroups.First(x => x.Attribute(ConstConfig.Condition) == null);
+
         foreach (var element in itemGroups)
         {
             var newItemGroup = CreateItemGroup(element);
             if (newItemGroup != null)
             {
                 itemGroup.AddAfterSelf(newItemGroup);
-                dict.Add(GetCondition(newItemGroup), newItemGroup);
             }
         }
+
+        UpdateItemGroups(itemGroups, itemGroup.Parent.Elements(ConstConfig.ItemGroup).ToList());
     }
 
     public XElement CreateItemGroup(XElement inputElement)

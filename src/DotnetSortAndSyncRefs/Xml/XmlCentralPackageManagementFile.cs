@@ -18,18 +18,22 @@ internal class XmlCentralPackageManagementFile : XmlBaseFile
           <{{ConstConfig.ItemGroup}} />
         </Project>
         """;
-
-
+    
     public XmlCentralPackageManagementFile(IFileSystem fileSystem, IReporter reporter)
         : base(fileSystem, reporter)
     {
+    }
+
+    public string GetDirectoryPackagesPropsPath(string path)
+    {
+        return FileSystem.Path.Combine(path, @"Directory.Packages.props");
     }
 
     public void CreateCentralPackageManagementFile(string path, bool isDryRun)
     {
         if (!string.IsNullOrWhiteSpace(path))
         {
-            FilePath = FileSystem.Path.Combine(path, @"Directory.Packages.props");
+            FilePath = GetDirectoryPackagesPropsPath(path);
         }
         BackupFilePath = $"{FilePath}.backup";
         IsNoDryRun = !isDryRun;
@@ -53,7 +57,7 @@ internal class XmlCentralPackageManagementFile : XmlBaseFile
 
     protected override string GetItemGroupElements()
     {
-        return ConstConfig.CentralPackageManagementElementTypes;
+        return ConstConfig.PackageVersion;
     }
 
     public override Task SaveAsync(CancellationToken cancellationToken = default)

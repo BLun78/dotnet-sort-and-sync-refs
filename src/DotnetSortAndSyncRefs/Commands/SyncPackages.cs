@@ -1,5 +1,4 @@
 ﻿using DotnetSortAndSyncRefs.Common;
-using DotnetSortAndSyncRefs.Extensions;
 using DotnetSortAndSyncRefs.Xml;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -7,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using DotnetSortAndSyncRefs.Extensions;
 
 namespace DotnetSortAndSyncRefs.Commands
 {
@@ -49,7 +49,7 @@ namespace DotnetSortAndSyncRefs.Commands
                 elementsOfProjectFiles.AddRange(xmlProjectFile.ItemGroups);
             }
 
-            var referenceElementsOfProjectFiles = elementsOfProjectFiles.GetReferenceElements();
+            var referenceElementsOfProjectFiles = elementsOfProjectFiles.GetPackageReferenceElements();
 
             var lookup = referenceElementsOfProjectFiles
                 .ToLookup(x => x.FirstAttribute?.Value, element => element);
@@ -80,7 +80,7 @@ namespace DotnetSortAndSyncRefs.Commands
                 var attributesOfPropsFiles = xmlCentralPackageManagementFile
                     .ItemGroups
                     .ToList()
-                    .GetReferenceElements();
+                    .GetPackageReferenceElements();
 
                 // compare project references and PackageVersion
                 foreach (var attributesOfPropsFile in attributesOfPropsFiles)

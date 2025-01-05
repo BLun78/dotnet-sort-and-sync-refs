@@ -1,15 +1,14 @@
-﻿using System;
+﻿using DotnetSortAndSyncRefs.Common;
+using DotnetSortAndSyncRefs.Extensions;
+using DotnetSortAndSyncRefs.Xml;
+using McMaster.Extensions.CommandLineUtils;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.XPath;
-using DotnetSortAndSyncRefs.Common;
-using DotnetSortAndSyncRefs.Extensions;
-using DotnetSortAndSyncRefs.Models;
-using DotnetSortAndSyncRefs.Xml;
-using McMaster.Extensions.CommandLineUtils;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace DotnetSortAndSyncRefs.Commands;
 
@@ -38,22 +37,27 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
         var error = false;
         var reporter = ServiceProvider.GetRequiredService<Common.IReporter>();
         var centralPackageManagementFile = ServiceProvider.GetRequiredService<XmlCentralPackageManagementFile>();
+        var directoryPackagesPropsDoExists = FileSystem.File.Exists(centralPackageManagementFile.GetDirectoryPackagesPropsPath(Path));
 
-        centralPackageManagementFile.CreateCentralPackageManagementFile(Path, IsDryRun);
-        var itemGroup = centralPackageManagementFile.Document.XPathSelectElements($"//{ConstConfig.ItemGroup}").First();
+        if (directoryPackagesPropsDoExists)
+        {
+            await centralPackageManagementFile.LoadFileAsync(centralPackageManagementFile.GetDirectoryPackagesPropsPath(Path), IsDryRun);
+        }
+        else
+        {
+            centralPackageManagementFile.CreateCentralPackageManagementFile(Path, IsDryRun);
+            AllFiles.Add(centralPackageManagementFile.FilePath);
+            FileProps.Add(centralPackageManagementFile.FilePath);
+        }
 
-        var dict = new Dictionary<string, XElement>
-            {
-                { ConstConfig.WithOutCondition, itemGroup }
-            };
+        var originItemGroups = centralPackageManagementFile.Document.XPathSelectElements($"//{ConstConfig.ItemGroup}").ToList();
+        
 
-        var elementsOfProjectFiles = new List<XElement>();
         var xmlFilesToSave = new List<XmlBaseFile>();
         foreach (var projFile in FileProjects)
         {
             try
             {
-                elementsOfProjectFiles.Clear();
 
                 result = ErrorCodes.CreateCentralPackageManagementFailed;
                 var xmlProjectFile = ServiceProvider.GetRequiredService<XmlProjectFile>();
@@ -64,22 +68,25 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
                     .XPathSelectElements($"//{ConstConfig.ItemGroup}[{ConstConfig.ProjectElementTypesQuery}] | //{ConstConfig.ItemGroup}[{ConstConfig.Condition} and {ConstConfig.ProjectElementTypesQuery}]")
                     .ToList();
 
-                xmlProjectFile.CreateItemGroups(itemGroups, itemGroup, dict);
-
-                elementsOfProjectFiles.AddRange(itemGroups);
-
-                var referenceElementsOfProjectFiles = elementsOfProjectFiles.GetReferenceElements();
-                foreach (var element in referenceElementsOfProjectFiles)
+                if (directoryPackagesPropsDoExists)
                 {
-                    var condition = xmlProjectFile.GetCondition(element.Parent) ?? ConstConfig.WithOutCondition;
+                    xmlProjectFile.UpdateItemGroups(itemGroups, originItemGroups);
 
-                    if (dict.TryGetValue(condition, out var value))
+                    var removeList = itemGroups.GetPackageReferenceElementsWithVersionSorted();
+
+                    foreach (var element in removeList)
                     {
-                        var newElement = new XElement(element)
-                        {
-                            Name = ConstConfig.CentralPackageManagementElementTypes
-                        };
-                        value.Add(newElement);
+                        xmlProjectFile.RemoveVersion(element);
+                    }
+                }
+                else
+                {
+                    xmlProjectFile.CreateItemGroups(itemGroups, originItemGroups);
+                    
+                    var removeList = itemGroups.GetPackageReferenceElementsWithVersionSorted();
+
+                    foreach (var element in removeList)
+                    {
                         xmlProjectFile.RemoveVersion(element);
                     }
                 }
@@ -89,7 +96,7 @@ internal class CentralPackageManagementCommand : SortReferences, ICommandBase
                 {
                     xmlFilesToSave.Add(xmlProjectFile);
                 }
-            
+
                 result = ErrorCodes.Ok;
             }
             catch (Exception e)

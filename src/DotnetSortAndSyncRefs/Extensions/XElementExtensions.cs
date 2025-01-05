@@ -11,31 +11,29 @@ namespace DotnetSortAndSyncRefs.Extensions
 {
     internal static partial class XElementExtensions
     {
-        public static List<XElement> GetReferenceElements(this List<XElement> elementsOfProjectFiles)
+        public static List<XElement> GetPackageReferenceElements(this List<XElement> elementsOfProjectFiles)
         {
-            var attributesOfProjectFiles = new List<XElement>();
-
-            foreach (var elementsOfProjectFile in elementsOfProjectFiles)
-            {
-                XElement node = null;
-
-                do
-                {
-                    if (node == null)
-                    {
-                        node = elementsOfProjectFile.FirstNode as XElement;
-                    }
-                    else
-                    {
-                        node = node.NextNode as XElement;
-                    }
-                    attributesOfProjectFiles.Add(node);
-
-                } while (node?.NextNode != null);
-
-            }
-            return attributesOfProjectFiles;
+            return elementsOfProjectFiles.Elements(ConstConfig.PackageReference).ToList();
         }
 
+        public static List<XElement> GetPackageReferenceElementsWithVersionSorted(this List<XElement> itemGroups)
+        {
+            return itemGroups
+                .Elements(ConstConfig.PackageReference)
+                .Where(x => x.Attribute(ConstConfig.Version) != null)
+                .OrderByDescending(x => (string)x.Attribute(ConstConfig.Include))
+                .ThenBy(x => (string)x.Attribute(ConstConfig.Version))
+                .ToList(); ;
+        }
+
+        public static List<XElement> GetPackageReferenceElementsWithVersionSorted(this XElement itemGroups)
+        {
+            return itemGroups
+                .Elements(ConstConfig.PackageReference)
+                .Where(x => x.Attribute(ConstConfig.Version) != null)
+                .OrderByDescending(x => (string)x.Attribute(ConstConfig.Include))
+                .ThenBy(x => (string)x.Attribute(ConstConfig.Version))
+                .ToList(); ;
+        }
     }
 }

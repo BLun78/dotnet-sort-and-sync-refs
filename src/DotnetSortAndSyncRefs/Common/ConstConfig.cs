@@ -2,9 +2,10 @@
 {
     internal static class ConstConfig
     {
-        public const string AllElementTypesQuery = @"PackageReference|Reference|PackageVersion|GlobalPackageReference";
-        public const string ProjectElementTypesQuery = @"PackageReference|Reference|GlobalPackageReference";
-        public const string CentralPackageManagementElementTypes = @"PackageVersion";
+        public const string AllElementTypesQuery = $"{PackageReference}|Reference|PackageVersion|GlobalPackageReference";
+        public const string ProjectElementTypesQuery = $"{PackageReference}|Reference|GlobalPackageReference";
+        public const string PackageReference = @"PackageReference";
+        public const string PackageVersion = @"PackageVersion";
         public const string Condition = @"Condition";
         public const string Include = @"Include";
         public const string Version = @"Version";

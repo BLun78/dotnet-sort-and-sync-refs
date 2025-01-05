@@ -54,9 +54,9 @@ namespace DotnetSortAndSyncRefs.Test.Commands
 
             // assert
             Assert.AreEqual(3, command.ProjFilesWithNonSortedReferences.Count); // result of Inspection
-            Assert.AreEqual(2, command.AllFiles.Count);
+            Assert.AreEqual(3, command.AllFiles.Count);
             Assert.AreEqual(2, command.FileProjects.Count);
-            Assert.AreEqual(0, command.FileProps.Count);
+            Assert.AreEqual(1, command.FileProps.Count);
             Assert.AreEqual(path, command.Path);
             Assert.AreEqual(ErrorCodes.Ok, result);
             Assert.IsTrue(fileSystem.FileExists(pathOfResultFile));
@@ -76,7 +76,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
         }
 
         [TestMethod]
-        public async Task Test_CentralPackageManagementCommand_Add_New_Package()
+        public async Task Test_CentralPackageManagementCommand_Add_New_Package_Ok()
         {
             // arrange
             var path = @"c:\solution";
@@ -91,6 +91,7 @@ namespace DotnetSortAndSyncRefs.Test.Commands
             };
             var fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
             {
+                { pathOfResultFile, new MockFileData(MockFileCpm.GetDirectoryPackagesPropsSorted(), Encoding.UTF8) },
                 { pathOfInputFile1, new MockFileData(MockFileCpm.GetDotnetResultUnsorted(), Encoding.UTF8) },
                 { pathOfInputFile2, new MockFileData(MockFileCpm.GetNetstandardResultUnsorted(), Encoding.UTF8) }
             }, mockOption);
@@ -117,9 +118,9 @@ namespace DotnetSortAndSyncRefs.Test.Commands
 
             // assert
             Assert.AreEqual(3, command.ProjFilesWithNonSortedReferences.Count); // result of Inspection
-            Assert.AreEqual(2, command.AllFiles.Count);
+            Assert.AreEqual(3, command.AllFiles.Count);
             Assert.AreEqual(2, command.FileProjects.Count);
-            Assert.AreEqual(0, command.FileProps.Count);
+            Assert.AreEqual(1, command.FileProps.Count);
             Assert.AreEqual(path, command.Path);
             Assert.AreEqual(ErrorCodes.Ok, result);
             Assert.IsTrue(fileSystem.FileExists(pathOfResultFile));
